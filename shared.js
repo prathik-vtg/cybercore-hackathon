@@ -181,6 +181,57 @@ class SecurityEventBus {
     constructor() {
         this.channel = new BroadcastChannel('cybercore-security');
         this.listeners = {};
+        
+        // Caches to preserve synchronous getter compatibility
+        this.eventsCache = JSON.parse(localStorage.getItem('security-events') || '[]');
+        this.sessionsCache = JSON.parse(localStorage.getItem('active-sessions') || '[]');
+        this.activityCache = JSON.parse(localStorage.getItem('activity-log') || '[]');
+
+        // Initialize Firebase Syncing
+        this._initFirebaseSync();
+    }
+
+    _initFirebaseSync() {
+        // Wait for Firebase to be ready via the globally injected script
+        const waitInterval = setInterval(() => {
+            if (window.db) {
+                clearInterval(waitInterval);
+                console.log("🔗 Connecting SecurityEventBus to Firebase Realtime Database...");
+                
+                // Continuous Sync: Security Events
+                window.db.ref('cybercore/security-events').on('value', (snap) => {
+                    if (snap.val()) {
+                        // Firebase returns an object of pushes, we convert to array and sort reverse chronological
+                        const arr = Object.values(snap.val()).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+                        this.eventsCache = arr;
+                        localStorage.setItem('security-events', JSON.stringify(arr.slice(0,200)));
+                        this._emit('threat', arr[0]); // emit newest
+                    }
+                });
+
+                // Continuous Sync: Active Sessions
+                window.db.ref('cybercore/active-sessions').on('value', (snap) => {
+                    if (snap.val()) {
+                        this.sessionsCache = snap.val();
+                        localStorage.setItem('active-sessions', JSON.stringify(this.sessionsCache));
+                        this._emit('session', this.sessionsCache);
+                    } else {
+                        this.sessionsCache = [];
+                        this._emit('session', []);
+                    }
+                });
+
+                // Continuous Sync: Activity Log
+                window.db.ref('cybercore/activity-log').on('value', (snap) => {
+                    if (snap.val()) {
+                        const arr = Object.values(snap.val()).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+                        this.activityCache = arr;
+                        localStorage.setItem('activity-log', JSON.stringify(arr.slice(0,500)));
+                        this._emit('activity', arr[0]);
+                    }
+                });
+            }
+        }, 200);
     }
 
     // Helper: Send Real Email (EmailJS)
@@ -190,8 +241,6 @@ class SecurityEventBus {
             return;
         }
 
-        // We prepare the variables for the EmailJS Template
-        // Use href and lastIndexOf to correctly grab the sub-directory on GitHub pages!
         const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
         const advisorUrl = `${baseUrl}/chatbot.html?threat=${threat.type || 'UNKNOWN'}&name=${encodeURIComponent(employeeName || 'Employee')}`;
         
@@ -207,7 +256,6 @@ class SecurityEventBus {
             advisor_link: advisorUrl
         };
 
-        // Notice we only pass 3 arguments because emailjs was already initialized with the public key
         window.emailjs.send(EMAIL_JS_SERVICE_ID, EMAIL_JS_TEMPLATE_ID, templateParams)
             .then((response) => {
                 console.log('✅ SUCCESS: Threat email sent to ' + employeeEmail, response.status, response.text);
@@ -224,7 +272,6 @@ class SecurityEventBus {
             ...threatData
         };
 
-        // Find the target employee to extract their email address for notification
         let targetEmpEmail = null;
         let targetEmpName = null;
         if (event.empId) {
@@ -234,18 +281,16 @@ class SecurityEventBus {
                 targetEmpName = emp.name;
             }
         } else if (event.targetAccount) {
-            // For brute force attacks, they target the email address directly
             const emp = EMPLOYEES.find(e => e.email === event.targetAccount);
             if (emp) {
                 targetEmpEmail = emp.email;
                 targetEmpName = emp.name;
             } else {
-                targetEmpEmail = event.targetAccount; // fallback
+                targetEmpEmail = event.targetAccount;
                 targetEmpName = "User";
             }
         }
 
-        // Fire the email ONLY if it's not Privilege Escalation or Insider Threat
         const isExcluded = 
             event.type === 'PRIVILEGE_ESCALATION' || event.type === 'Privilege Escalation' || 
             event.threatName === 'Privilege Escalation' || event.threatName === 'PRIVILEGE_ESCALATION' ||
@@ -258,24 +303,20 @@ class SecurityEventBus {
             console.log(`⚠️ Email skipped for ${event.type} to avoid disrupting intentional behavior.`);
         }
 
-        // Store in localStorage
-        const events = JSON.parse(localStorage.getItem('security-events') || '[]');
-        events.unshift(event);
-        localStorage.setItem('security-events', JSON.stringify(events.slice(0, 200)));
-
-        // Broadcast to other tabs
-        this.channel.postMessage({ type: 'NEW_THREAT', payload: event });
-
-        // Trigger local listeners too
-        this._emit('threat', event);
+        // Push to Firebase instantly
+        if (window.db) {
+            window.db.ref('cybercore/security-events').push(event);
+        } else {
+            // Fallback if not connected yet
+            this.eventsCache.unshift(event);
+        }
 
         return event;
     }
 
     // Update active sessions
     updateSession(sessionData) {
-        const sessions = JSON.parse(localStorage.getItem('active-sessions') || '[]');
-        const existingIdx = sessions.findIndex(s => s.empId === sessionData.empId);
+        const existingIdx = this.sessionsCache.findIndex(s => s.empId === sessionData.empId);
 
         if (sessionData.action === 'login') {
             const session = {
@@ -289,18 +330,22 @@ class SecurityEventBus {
                 status: 'active'
             };
             if (existingIdx >= 0) {
-                sessions[existingIdx] = session;
+                this.sessionsCache[existingIdx] = session;
             } else {
-                sessions.push(session);
+                this.sessionsCache.push(session);
             }
         } else if (sessionData.action === 'logout') {
             if (existingIdx >= 0) {
-                sessions.splice(existingIdx, 1);
+                this.sessionsCache.splice(existingIdx, 1);
             }
+        } else if (sessionData.action === 'clear_all') {
+            this.sessionsCache = [];
         }
 
-        localStorage.setItem('active-sessions', JSON.stringify(sessions));
-        this.channel.postMessage({ type: 'SESSION_UPDATE', payload: sessions });
+        // Overwrite full array to Firebase
+        if (window.db) {
+            window.db.ref('cybercore/active-sessions').set(this.sessionsCache);
+        }
     }
 
     // Log activity
@@ -311,80 +356,52 @@ class SecurityEventBus {
             ...activityData
         };
 
-        const activities = JSON.parse(localStorage.getItem('activity-log') || '[]');
-        activities.unshift(activity);
-        localStorage.setItem('activity-log', JSON.stringify(activities.slice(0, 500)));
-
-        this.channel.postMessage({ type: 'ACTIVITY', payload: activity });
+        if (window.db) {
+            window.db.ref('cybercore/activity-log').push(activity);
+        }
     }
 
-    // Listen for threats from other tabs
+    // Listen for threats from Firebase changes
     onThreat(callback) {
-        this.channel.addEventListener('message', (e) => {
-            if (e.data.type === 'NEW_THREAT') {
-                callback(e.data.payload);
-            }
-        });
-
-        // Backup: listen for storage events
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'security-events' && e.newValue) {
-                const events = JSON.parse(e.newValue);
-                if (events.length > 0) {
-                    callback(events[0]); // Most recent
-                }
-            }
-        });
-
         this._on('threat', callback);
     }
 
     // Listen for session updates
     onSessionUpdate(callback) {
-        this.channel.addEventListener('message', (e) => {
-            if (e.data.type === 'SESSION_UPDATE') {
-                callback(e.data.payload);
-            }
-        });
-
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'active-sessions' && e.newValue) {
-                callback(JSON.parse(e.newValue));
-            }
-        });
+        this._on('session', callback);
     }
 
     // Listen for activity
     onActivity(callback) {
-        this.channel.addEventListener('message', (e) => {
-            if (e.data.type === 'ACTIVITY') {
-                callback(e.data.payload);
-            }
-        });
+        this._on('activity', callback);
     }
 
-    // Get all stored events
+    // Synchronous Getters (Pulling from Live Firebase Cache)
     getEvents() {
-        return JSON.parse(localStorage.getItem('security-events') || '[]');
+        return this.eventsCache;
     }
 
-    // Get active sessions
     getSessions() {
-        return JSON.parse(localStorage.getItem('active-sessions') || '[]');
+        return this.sessionsCache;
     }
 
-    // Get activity log
     getActivities() {
-        return JSON.parse(localStorage.getItem('activity-log') || '[]');
+        return this.activityCache;
     }
 
     // Clear all data
     clearAll() {
+        // Destroy Database
+        if (window.db) {
+            window.db.ref('cybercore').remove();
+        }
         localStorage.removeItem('security-events');
         localStorage.removeItem('active-sessions');
         localStorage.removeItem('activity-log');
         localStorage.removeItem('failed-attempts');
-        this.channel.postMessage({ type: 'CLEAR_ALL' });
+        this.eventsCache = [];
+        this.sessionsCache = [];
+        this.activityCache = [];
     }
 
     // Internal event system
