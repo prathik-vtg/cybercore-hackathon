@@ -25,7 +25,7 @@ const EMPLOYEES = [
         id: 'EMP001',
         name: 'Prathik Gowda',
         email: 'prathikgowda5463@gmail.com',
-        password: 'Prathik@123',
+        password: 'AdminSecure!99',
         role: 'Admin',
         department: 'Executive',
         accessLevel: 5,
@@ -36,7 +36,7 @@ const EMPLOYEES = [
         id: 'EMP002',
         name: 'Anirudh',
         email: 'jpanirudh612@gmail.com',
-        password: 'User@123',
+        password: 'DevOpsUser$24',
         role: 'Developer',
         department: 'Technology',
         accessLevel: 3,
@@ -47,7 +47,7 @@ const EMPLOYEES = [
         id: 'EMP003',
         name: 'Ananya',
         email: 'ananyakv111@gmail.com',
-        password: 'User@123',
+        password: 'DataAnalyst#77',
         role: 'Analyst',
         department: 'Analytics',
         accessLevel: 2,
@@ -58,7 +58,7 @@ const EMPLOYEES = [
         id: 'EMP004',
         name: 'Poornima',
         email: 'poornimapraven@gmail.com',
-        password: 'User@123',
+        password: 'HrManager@2026',
         role: 'HR Manager',
         department: 'Human Resources',
         accessLevel: 2,
@@ -69,7 +69,7 @@ const EMPLOYEES = [
         id: 'EMP005',
         name: 'Apurva',
         email: 'apurvaappu573@gmail.com',
-        password: 'User@123',
+        password: 'QA_Tester%55',
         role: 'Tester',
         department: 'Technology',
         accessLevel: 2,
@@ -191,7 +191,8 @@ class SecurityEventBus {
         }
 
         // We prepare the variables for the EmailJS Template
-        const baseUrl = window.location.origin;
+        // Use href and lastIndexOf to correctly grab the sub-directory on GitHub pages!
+        const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
         const advisorUrl = `${baseUrl}/chatbot.html?threat=${threat.type || 'UNKNOWN'}&name=${encodeURIComponent(employeeName || 'Employee')}`;
         
         const templateParams = {
