@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberCore Solutions - Company Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-primary: #0a0a1a;
+            --bg-secondary: #0f0f2a;
+            --bg-card: rgba(15,15,40,0.8);
+            --border: rgba(255,255,255,0.06);
+            --accent: #00d4ff;
+            --accent-2: #8b5cf6;
+            --success: #00ff88;
+            --danger: #ff1744;
+            --warning: #ff9100;
+            --text: #e0e0e0;
+            --text-dim: rgba(255,255,255,0.4);
+            --sidebar-w: 260px;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg-primary);
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+        }
+
+        /* ── LOGIN PAGE ──────────────────────── */
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .login-bg-grid {
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        .login-glow {
+            position: fixed;
+            width: 500px; height: 500px;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.12;
+        }
+        .login-glow-1 { top: -150px; left: -100px; background: #00d4ff; }
+        .login-glow-2 { bottom: -150px; right: -100px; background: #8b5cf6; }
+
+        .login-container {
+            position: relative;
+            z-index: 10;
+            width: 440px;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+        .login-logo {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00d4ff, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .login-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 2px;
+        }
+
+        .login-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            backdrop-filter: blur(20px);
+        }
+
+        .login-field {
+            margin-bottom: 1.25rem;
+        }
+        .login-field label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.5rem;
+        }
+        .login-field input {
+            width: 100%;
+            padding: 0.9rem 1.2rem;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
+            outline: none;
+        }
+        .login-field input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(0,212,255,0.1);
+        }
+        .login-field input::placeholder {
+            color: rgba(255,255,255,0.2);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 2px;
+            margin-top: 0.5rem;
+        }
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,212,255,0.3);
+        }
+        .login-btn:active { transform: translateY(0); }
+
+        .login-error {
+            background: rgba(255,23,68,0.1);
+            border: 1px solid rgba(255,23,68,0.3);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            color: #ff1744;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            display: none;
+            animation: shake 0.5s;
+        }
+        .login-error.show { display: flex; align-items: center; gap: 0.5rem; }
+
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .login-attempts-warning {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.75rem;
+            color: var(--warning);
+            display: none;
+        }
+        .login-attempts-warning.show { display: block; }
+
+        .login-info {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+        .login-info a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        /* ── DASHBOARD ──────────────────────── */
+        .dashboard { display: none; min-height: 100vh; }
+        .dashboard.active { display: flex; }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-w);
+            min-height: 100vh;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem 0;
+            position: fixed;
+            left: 0; top: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 50;
+        }
+        .sidebar-logo {
+            padding: 0 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .sidebar-logo h2 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 2px;
+        }
+        .sidebar-logo span {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        .sidebar-user {
+            padding: 1rem 1.5rem;
+            margin: 0 1rem;
+            background: rgba(0,212,255,0.05);
+            border-radius: 14px;
+            border: 1px solid rgba(0,212,255,0.1);
+            margin-bottom: 1.5rem;
+        }
+        .sidebar-avatar {
+            width: 42px; height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+        .sidebar-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #fff;
+        }
+        .sidebar-role {
+            font-size: 0.7rem;
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .nav-section {
+            padding: 0 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .nav-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+            padding: 0 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.7rem 1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.6);
+            position: relative;
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        .nav-item.active {
+            background: rgba(0,212,255,0.1);
+            color: var(--accent);
+        }
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 50%;
+            transform: translateY(-50%);
+            width: 3px; height: 20px;
+            background: var(--accent);
+            border-radius: 0 4px 4px 0;
+        }
+        .nav-icon { font-size: 1.1rem; width: 24px; text-align: center; }
+
+        .nav-item.danger { color: rgba(255,23,68,0.7); }
+        .nav-item.danger:hover { background: rgba(255,23,68,0.1); color: #ff1744; }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 0 0.75rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-w);
+            flex: 1;
+            min-height: 100vh;
+        }
+
+        /* Top Bar */
+        .topbar {
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            background: rgba(10,10,26,0.8);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+        .topbar-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+        }
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .topbar-clock {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+        .topbar-location {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .topbar-location select {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.4rem 0.6rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            outline: none;
+        }
+        .topbar-location select:focus {
+            border-color: var(--accent);
+        }
+
+        /* Content Pages */
+        .page-content {
+            padding: 2rem;
+            display: none;
+        }
+        .page-content.active { display: block; animation: fadeIn 0.3s; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Dashboard Cards */
+        .dash-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+        .dash-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+        .dash-card:hover {
+            border-color: rgba(0,212,255,0.2);
+            transform: translateY(-2px);
+        }
+        .dash-card-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .dash-card-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.25rem;
+        }
+        .dash-card-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+        }
+        .section-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        /* Files Section */
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 1rem;
+        }
+        .dept-folder {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .dept-folder:hover {
+            border-color: rgba(0,212,255,0.2);
+        }
+        .dept-folder-header {
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(0,212,255,0.03);
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+        }
+        .dept-folder-header .dept-icon { font-size: 1.3rem; }
+        .dept-folder-header .dept-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #fff;
+        }
+        .dept-folder-header .dept-badge {
+            margin-left: auto;
+            padding: 0.2rem 0.5rem;
+            background: rgba(255,23,68,0.15);
+            color: #ff1744;
+            border-radius: 6px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            display: none;
+        }
+        .dept-folder-header .dept-badge.show { display: block; }
+
+        .file-list { padding: 0.5rem; }
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 0.75rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+            flex-wrap: wrap;
+        }
+        .file-item:hover { background: rgba(255,255,255,0.03); }
+        .file-icon { font-size: 1rem; }
+        .file-name {
+            flex: 1;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.7);
+        }
+        .file-size {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .file-download {
+            padding: 0.3rem 0.6rem;
+            background: rgba(0,212,255,0.1);
+            border: 1px solid rgba(0,212,255,0.2);
+            color: var(--accent);
+            border-radius: 6px;
+            font-size: 0.65rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .file-download:hover {
+            background: rgba(0,212,255,0.2);
+        }
+        .file-classified {
+            padding: 0.15rem 0.4rem;
+            background: rgba(255,23,68,0.1);
+            color: #ff1744;
+            border-radius: 4px;
+            font-size: 0.55rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        /* Admin Panel */
+        .admin-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+        }
+        .admin-warning {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: rgba(255,23,68,0.08);
+            border: 1px solid rgba(255,23,68,0.2);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+        .admin-warning-icon { font-size: 2rem; }
+        .admin-warning-text h4 {
+            color: #ff1744;
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+        }
+        .admin-warning-text p {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .admin-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .admin-action-btn {
+            padding: 1rem;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            font-family: 'Inter', sans-serif;
+        }
+        .admin-action-btn:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(139,92,246,0.3);
+        }
+        .admin-action-btn .admin-btn-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        .admin-action-btn .admin-btn-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 0.25rem;
+        }
+        .admin-action-btn .admin-btn-desc {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        /* Activity Log */
+        .activity-log {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .activity-log-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            font-family: 'Orbitron', monospace;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+            animation: fadeIn 0.3s;
+        }
+        .activity-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .activity-dot.info { background: var(--accent); }
+        .activity-dot.warning { background: var(--warning); }
+        .activity-dot.danger { background: var(--danger); }
+        .activity-dot.success { background: var(--success); }
+        .activity-text {
+            flex: 1;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.7);
+        }
+        .activity-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .toast {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            animation: slideInRight 0.4s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            backdrop-filter: blur(20px);
+            min-width: 300px;
+        }
+        .toast.success {
+            background: rgba(0,255,136,0.1);
+            border: 1px solid rgba(0,255,136,0.3);
+            color: #00ff88;
+        }
+        .toast.warning {
+            background: rgba(255,145,0,0.1);
+            border: 1px solid rgba(255,145,0,0.3);
+            color: #ff9100;
+        }
+        .toast.danger {
+            background: rgba(255,23,68,0.1);
+            border: 1px solid rgba(255,23,68,0.3);
+            color: #ff1744;
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Profile Section */
+        .profile-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 600px;
+        }
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .profile-avatar {
+            width: 80px; height: 80px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .profile-info h3 {
+            font-size: 1.2rem;
+            color: #fff;
+            margin-bottom: 0.25rem;
+        }
+        .profile-info p {
+            font-size: 0.85rem;
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .profile-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .profile-detail {
+            padding: 1rem;
+            background: rgba(255,255,255,0.02);
+            border-radius: 10px;
+        }
+        .profile-detail label {
+            display: block;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-dim);
+            margin-bottom: 0.3rem;
+        }
+        .profile-detail span {
+            font-size: 0.9rem;
+            color: #fff;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <!-- ═══ LOGIN PAGE ═══ -->
+    <div class="login-page" id="loginPage">
+        <div class="login-bg-grid"></div>
+        <div class="login-glow login-glow-1"></div>
+        <div class="login-glow login-glow-2"></div>
+
+        <div class="login-container">
+            <div class="login-header">
+                <div class="login-logo">CYBERCORE</div>
+                <div class="login-subtitle">Employee Portal</div>
+            </div>
+
+            <div class="login-card">
+                <div class="login-error" id="loginError">
+                    <span>⚠️</span>
+                    <span id="loginErrorText">Invalid credentials</span>
+                </div>
+
+                <form id="loginForm" onsubmit="return handleLogin(event)">
+                    <div class="login-field">
+                        <label>Email Address</label>
+                        <input type="email" id="loginEmail" placeholder="employee@cybercore.com" required autocomplete="off">
+                    </div>
+                    <div class="login-field">
+                        <label>Password</label>
+                        <input type="password" id="loginPassword" placeholder="Enter your password" required autocomplete="off">
+                    </div>
+                    <button type="submit" class="login-btn" id="loginBtn">ACCESS PORTAL</button>
+                </form>
+
+                <div class="login-attempts-warning" id="attemptsWarning">
+                    ⚠️ Multiple failed attempts detected. Security has been notified.
+                </div>
+            </div>
+
+            <div class="login-info">
+                <a href="index.html">← Back to CyberCore Platform</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ DASHBOARD ═══ -->
+    <div class="dashboard" id="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <h2>CYBERCORE</h2>
+                <span>Employee Portal</span>
+            </div>
+
+            <div class="sidebar-user">
+                <div class="sidebar-avatar" id="sidebarAvatar">JS</div>
+                <div class="sidebar-name" id="sidebarName">John Smith</div>
+                <div class="sidebar-role" id="sidebarRole">CEO</div>
+            </div>
+
+            <nav>
+                <div class="nav-section">
+                    <div class="nav-label">Main</div>
+                    <div class="nav-item active" data-page="overview" onclick="switchPage('overview')">
+                        <span class="nav-icon">📊</span> Overview
+                    </div>
+                    <div class="nav-item" data-page="files" onclick="switchPage('files')">
+                        <span class="nav-icon">📁</span> File Manager
+                    </div>
+                    <div class="nav-item" data-page="profile" onclick="switchPage('profile')">
+                        <span class="nav-icon">👤</span> My Profile
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-label">System</div>
+                    <div class="nav-item" data-page="admin" onclick="switchPage('admin')">
+                        <span class="nav-icon">⚙️</span> Admin Panel
+                    </div>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="nav-section">
+                    <div class="nav-item danger" onclick="handleLogout()">
+                        <span class="nav-icon">🚪</span> Logout
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main -->
+        <div class="main-content">
+            <!-- Top Bar -->
+            <div class="topbar">
+                <div class="topbar-title" id="pageTitle">Dashboard Overview</div>
+                <div class="topbar-right">
+                    <div class="topbar-location">
+                        <span style="font-size:0.8rem;">📍</span>
+                        <select id="locationSelect" onchange="handleLocationChange()">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="topbar-clock" id="topbarClock"></div>
+                </div>
+            </div>
+
+            <!-- Overview Page -->
+            <div class="page-content active" id="page-overview">
+                <div class="dash-grid">
+                    <div class="dash-card">
+                        <div class="dash-card-icon">📂</div>
+                        <div class="dash-card-value" id="totalFiles">0</div>
+                        <div class="dash-card-label">Files Available</div>
+                    </div>
+                    <div class="dash-card">
+                        <div class="dash-card-icon">⬇️</div>
+                        <div class="dash-card-value" id="downloadCount">0</div>
+                        <div class="dash-card-label">Downloads Today</div>
+                    </div>
+                    <div class="dash-card">
+                        <div class="dash-card-icon">🔒</div>
+                        <div class="dash-card-value" id="accessLevel">0</div>
+                        <div class="dash-card-label">Access Level</div>
+                    </div>
+                    <div class="dash-card">
+                        <div class="dash-card-icon">🗂️</div>
+                        <div class="dash-card-value" id="deptCount">0</div>
+                        <div class="dash-card-label">Departments</div>
+                    </div>
+                </div>
+
+                <div class="section-header">
+                    <div class="section-title">📋 Recent Activity</div>
+                </div>
+                <div class="activity-log">
+                    <div class="activity-log-header">Activity Feed</div>
+                    <div id="activityFeed">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Files Page -->
+            <div class="page-content" id="page-files">
+                <div class="section-header">
+                    <div class="section-title">📁 File Manager - All Departments</div>
+                </div>
+                <div class="files-grid" id="filesGrid">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Profile Page -->
+            <div class="page-content" id="page-profile">
+                <div class="section-header">
+                    <div class="section-title">👤 My Profile</div>
+                </div>
+                <div class="profile-card" id="profileCard">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Admin Page -->
+            <div class="page-content" id="page-admin">
+                <div class="section-header">
+                    <div class="section-title">⚙️ Administration Panel</div>
+                </div>
+                <div class="admin-panel">
+                    <div class="admin-warning">
+                        <div class="admin-warning-icon">🔐</div>
+                        <div class="admin-warning-text">
+                            <h4>Restricted Access Area</h4>
+                            <p>This section requires Level 5 administrative privileges. All actions are monitored and logged.</p>
+                        </div>
+                    </div>
+                    <div class="admin-actions">
+                        <button class="admin-action-btn" onclick="attemptAdminAction('user-management')">
+                            <span class="admin-btn-icon">👥</span>
+                            <div class="admin-btn-label">User Management</div>
+                            <div class="admin-btn-desc">Manage employee accounts</div>
+                        </button>
+                        <button class="admin-action-btn" onclick="attemptAdminAction('role-change')">
+                            <span class="admin-btn-icon">🔑</span>
+                            <div class="admin-btn-label">Change My Role</div>
+                            <div class="admin-btn-desc">Elevate access privileges</div>
+                        </button>
+                        <button class="admin-action-btn" onclick="attemptAdminAction('system-config')">
+                            <span class="admin-btn-icon">🖥️</span>
+                            <div class="admin-btn-label">System Config</div>
+                            <div class="admin-btn-desc">Modify system settings</div>
+                        </button>
+                        <button class="admin-action-btn" onclick="attemptAdminAction('security-override')">
+                            <span class="admin-btn-icon">🛡️</span>
+                            <div class="admin-btn-label">Security Override</div>
+                            <div class="admin-btn-desc">Disable security protocols</div>
+                        </button>
+                        <button class="admin-action-btn" onclick="attemptAdminAction('database-access')">
+                            <span class="admin-btn-icon">🗄️</span>
+                            <div class="admin-btn-label">Database Access</div>
+                            <div class="admin-btn-desc">Direct database queries</div>
+                        </button>
+                        <button class="admin-action-btn" onclick="attemptAdminAction('audit-logs')">
+                            <span class="admin-btn-icon">📋</span>
+                            <div class="admin-btn-label">Clear Audit Logs</div>
+                            <div class="admin-btn-desc">Remove activity records</div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="shared.js"></script>
+    <script>
+        // ── State ──────────────────────────────────
+        let currentUser = null;
+        let failedAttempts = {};  // email -> { count, timestamps }
+        let downloadTracker = {}; // empId -> { count, timestamps }
+        let lastLoginLocation = null;
+        let downloadCountToday = 0;
+
+        // ── Clock ──────────────────────────────────
+        function updateClock() {
+            const el = document.getElementById('topbarClock');
+            if (el) el.textContent = new Date().toLocaleTimeString('en-US', { hour12: false });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // ── Location Selector ──────────────────────
+        function populateLocations() {
+            const select = document.getElementById('locationSelect');
+            LOCATIONS.forEach((loc, i) => {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = `${loc.city}, ${loc.country}`;
+                select.appendChild(opt);
+            });
+        }
+        populateLocations();
+
+        // ── LOGIN SYSTEM ───────────────────────────
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+            const password = document.getElementById('loginPassword').value;
+
+            // Track failed attempts
+            if (!failedAttempts[email]) {
+                failedAttempts[email] = { count: 0, timestamps: [] };
+            }
+
+            // Find employee
+            const emp = EMPLOYEES.find(e => e.email.toLowerCase() === email && e.password === password);
+
+            if (!emp) {
+                // Failed login
+                failedAttempts[email].count++;
+                failedAttempts[email].timestamps.push(Date.now());
+
+                // Store in localStorage for persistence across refreshes
+                const stored = JSON.parse(localStorage.getItem('failed-attempts') || '{}');
+                if (!stored[email]) stored[email] = { count: 0, timestamps: [] };
+                stored[email].count++;
+                stored[email].timestamps.push(Date.now());
+                localStorage.setItem('failed-attempts', JSON.stringify(stored));
+
+                // Show error
+                const err = document.getElementById('loginError');
+                const errText = document.getElementById('loginErrorText');
+                err.classList.add('show');
+                errText.textContent = `Invalid credentials (Attempt ${failedAttempts[email].count})`;
+
+                // Log activity
+                securityBus.logActivity({
+                    type: 'FAILED_LOGIN',
+                    email: email,
+                    attemptCount: failedAttempts[email].count,
+                    ipAddress: securityBus._generateIP()
+                });
+
+                // Check for brute force (3+ failed attempts)
+                if (failedAttempts[email].count >= 3) {
+                    document.getElementById('attemptsWarning').classList.add('show');
+
+                    // Find the target employee name
+                    const targetEmp = EMPLOYEES.find(e => e.email.toLowerCase() === email);
+
+                    // 🚨 REPORT BRUTE FORCE THREAT
+                    securityBus.reportThreat({
+                        type: 'BRUTE_FORCE',
+                        threatName: THREAT_TYPES.BRUTE_FORCE.name,
+                        severity: THREAT_TYPES.BRUTE_FORCE.severity,
+                        icon: THREAT_TYPES.BRUTE_FORCE.icon,
+                        color: THREAT_TYPES.BRUTE_FORCE.color,
+                        description: `${failedAttempts[email].count} failed login attempts for account ${email}`,
+                        targetAccount: email,
+                        targetName: targetEmp ? targetEmp.name : 'Unknown',
+                        attemptCount: failedAttempts[email].count,
+                        sourceIP: securityBus._generateIP(),
+                        details: `Brute force attack detected on ${email}. ${failedAttempts[email].count} consecutive failed attempts.`
+                    });
+                }
+
+                return false;
+            }
+
+            // Successful login
+            currentUser = emp;
+            lastLoginLocation = emp.location;
+
+            // Set location selector
+            const locIdx = LOCATIONS.findIndex(l => emp.location.includes(l.city));
+            if (locIdx >= 0) document.getElementById('locationSelect').value = locIdx;
+
+            // Update session
+            securityBus.updateSession({
+                action: 'login',
+                empId: emp.id,
+                empName: emp.name,
+                role: emp.role,
+                department: emp.department,
+                location: emp.location
+            });
+
+            securityBus.logActivity({
+                type: 'LOGIN_SUCCESS',
+                empId: emp.id,
+                empName: emp.name,
+                role: emp.role,
+                location: emp.location
+            });
+
+            // Switch to dashboard
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('dashboard').classList.add('active');
+
+            // Update UI
+            updateDashboardUI();
+            addActivityItem('success', `Logged in successfully from ${emp.location}`);
+            showToast('success', `Welcome back, ${emp.name}!`);
+
+            return false;
+        }
+
+        // ── DASHBOARD UI ───────────────────────────
+        function updateDashboardUI() {
+            if (!currentUser) return;
+
+            // Sidebar
+            document.getElementById('sidebarAvatar').textContent = currentUser.avatar;
+            document.getElementById('sidebarName').textContent = currentUser.name;
+            document.getElementById('sidebarRole').textContent = currentUser.role;
+
+            // Dashboard cards
+            let totalFiles = 0;
+            Object.values(COMPANY_FILES).forEach(files => totalFiles += files.length);
+            document.getElementById('totalFiles').textContent = totalFiles;
+            document.getElementById('downloadCount').textContent = downloadCountToday;
+            document.getElementById('accessLevel').textContent = currentUser.accessLevel;
+            document.getElementById('deptCount').textContent = Object.keys(COMPANY_FILES).length;
+
+            // Profile
+            renderProfile();
+
+            // Files
+            renderFiles();
+        }
+
+        // ── PAGE SWITCHING ─────────────────────────
+        function switchPage(page) {
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+            document.getElementById('page-' + page).classList.add('active');
+            document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+
+            const titles = {
+                overview: 'Dashboard Overview',
+                files: 'File Manager',
+                profile: 'My Profile',
+                admin: 'Administration Panel'
+            };
+            document.getElementById('pageTitle').textContent = titles[page] || 'Dashboard';
+
+            // Log admin panel access for non-CEO
+            if (page === 'admin' && currentUser && currentUser.accessLevel < 5) {
+                addActivityItem('warning', `Accessed Admin Panel (Level ${currentUser.accessLevel})`);
+                securityBus.logActivity({
+                    type: 'ADMIN_ACCESS_ATTEMPT',
+                    empId: currentUser.id,
+                    empName: currentUser.name,
+                    accessLevel: currentUser.accessLevel
+                });
+            }
+        }
+
+        // ── FILES RENDERING ────────────────────────
+        function renderFiles() {
+            const grid = document.getElementById('filesGrid');
+            grid.innerHTML = '';
+
+            const deptIcons = {
+                'Executive': '💼',
+                'Technology': '💻',
+                'Engineering': '⚙️',
+                'Human Resources': '👥',
+                'Analytics': '📊'
+            };
+
+            Object.entries(COMPANY_FILES).forEach(([dept, files]) => {
+                const isOwnDept = currentUser.department === dept;
+                const isRestricted = !isOwnDept && currentUser.accessLevel < 4;
+
+                const folder = document.createElement('div');
+                folder.className = 'dept-folder';
+                folder.innerHTML = `
+                    <div class="dept-folder-header">
+                        <span class="dept-icon">${deptIcons[dept] || '📁'}</span>
+                        <span class="dept-name">${dept}</span>
+                        <span class="dept-badge ${isRestricted ? 'show' : ''}">RESTRICTED</span>
+                    </div>
+                    <div class="file-list">
+                        ${files.map(f => `
+                            <div class="file-item">
+                                <span class="file-icon">${f.name.endsWith('.pdf') ? '📄' : f.name.endsWith('.xlsx') || f.name.endsWith('.csv') ? '📊' : f.name.endsWith('.zip') ? '📦' : f.name.endsWith('.env') || f.name.endsWith('.txt') || f.name.endsWith('.sh') || f.name.endsWith('.sql') ? '📝' : '📎'}</span>
+                                <span class="file-name">${f.name}</span>
+                                ${f.classified ? '<span class="file-classified">CLASSIFIED</span>' : ''}
+                                <span class="file-size">${f.size}</span>
+                                <button class="file-download" onclick="handleFileDownload('${dept}', '${f.name}', ${f.classified}, event)">Download</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                grid.appendChild(folder);
+            });
+        }
+
+        // ── FILE DOWNLOAD HANDLER ──────────────────
+        function handleFileDownload(dept, fileName, classified, event) {
+            if (event) { event.stopPropagation(); }
+            if (!currentUser) return;
+
+            // Track download
+            downloadCountToday++;
+            document.getElementById('downloadCount').textContent = downloadCountToday;
+
+            if (!downloadTracker[currentUser.id]) {
+                downloadTracker[currentUser.id] = { count: 0, timestamps: [], files: [] };
+            }
+            downloadTracker[currentUser.id].count++;
+            downloadTracker[currentUser.id].timestamps.push(Date.now());
+            downloadTracker[currentUser.id].files.push({ dept, fileName, time: Date.now() });
+
+            const isOwnDept = currentUser.department === dept;
+
+            // Show download confirmation toast for EVERY download
+            addActivityItem('info', `📥 Downloaded: ${fileName} from ${dept}`);
+            showToast('success', `Downloaded: ${fileName} (${downloadCountToday} total)`);
+
+            // Check for INSIDER THREAT (accessing other department's classified files)
+            if (!isOwnDept && classified && currentUser.accessLevel < 4) {
+                addActivityItem('danger', `⚠️ Accessed classified file: ${fileName} (${dept})`);
+                showToast('danger', `🚨 Unauthorized access to ${dept} classified files!`);
+
+                // 🚨 REPORT INSIDER THREAT
+                securityBus.reportThreat({
+                    type: 'INSIDER_THREAT',
+                    threatName: THREAT_TYPES.INSIDER_THREAT.name,
+                    severity: THREAT_TYPES.INSIDER_THREAT.severity,
+                    icon: THREAT_TYPES.INSIDER_THREAT.icon,
+                    color: THREAT_TYPES.INSIDER_THREAT.color,
+                    description: `${currentUser.name} (${currentUser.department}) accessed classified file from ${dept}`,
+                    empId: currentUser.id,
+                    empName: currentUser.name,
+                    empRole: currentUser.role,
+                    empDepartment: currentUser.department,
+                    targetDepartment: dept,
+                    targetFile: fileName,
+                    details: `Employee ${currentUser.name} with ${currentUser.department} department access attempted to download classified file "${fileName}" from ${dept} department.`
+                });
+            }
+
+            // Check for DATA EXFILTRATION (3+ total downloads in this session)
+            const totalDownloads = downloadTracker[currentUser.id].count;
+
+            if (totalDownloads >= 3 && totalDownloads % 3 === 0) {
+                showToast('warning', `🚨 Data Exfiltration Alert! ${totalDownloads} files downloaded!`);
+                addActivityItem('danger', `⚠️ Bulk download detected: ${totalDownloads} files downloaded`);
+
+                // 🚨 REPORT DATA EXFILTRATION
+                securityBus.reportThreat({
+                    type: 'DATA_EXFILTRATION',
+                    threatName: THREAT_TYPES.DATA_EXFILTRATION.name,
+                    severity: THREAT_TYPES.DATA_EXFILTRATION.severity,
+                    icon: THREAT_TYPES.DATA_EXFILTRATION.icon,
+                    color: THREAT_TYPES.DATA_EXFILTRATION.color,
+                    description: `${currentUser.name} has downloaded ${totalDownloads} files in this session`,
+                    empId: currentUser.id,
+                    empName: currentUser.name,
+                    empRole: currentUser.role,
+                    downloadCount: totalDownloads,
+                    recentFiles: downloadTracker[currentUser.id].files.slice(-5).map(f => f.fileName),
+                    sourceIP: securityBus._generateIP(),
+                    details: `Potential data exfiltration by ${currentUser.name} (${currentUser.role}). ${totalDownloads} files downloaded in a single session. Recent files: ${downloadTracker[currentUser.id].files.slice(-3).map(f => f.fileName).join(', ')}`
+                });
+            }
+
+            securityBus.logActivity({
+                type: 'FILE_DOWNLOAD',
+                empId: currentUser.id,
+                empName: currentUser.name,
+                department: dept,
+                file: fileName,
+                classified: classified,
+                isOwnDept: isOwnDept
+            });
+        }
+
+        // ── LOCATION CHANGE (IMPOSSIBLE TRAVEL) ───
+        function handleLocationChange() {
+            if (!currentUser) return;
+
+            const select = document.getElementById('locationSelect');
+            const newLocIdx = parseInt(select.value);
+            const newLoc = LOCATIONS[newLocIdx];
+            const newLocationStr = `${newLoc.city}, ${newLoc.country}`;
+
+            if (lastLoginLocation && !newLocationStr.includes(lastLoginLocation.split(',')[0])) {
+                addActivityItem('danger', `⚠️ Location changed: ${lastLoginLocation} → ${newLocationStr}`);
+                showToast('danger', 'Impossible travel detected!');
+
+                // 🚨 REPORT IMPOSSIBLE TRAVEL
+                securityBus.reportThreat({
+                    type: 'IMPOSSIBLE_TRAVEL',
+                    threatName: THREAT_TYPES.IMPOSSIBLE_TRAVEL.name,
+                    severity: THREAT_TYPES.IMPOSSIBLE_TRAVEL.severity,
+                    icon: THREAT_TYPES.IMPOSSIBLE_TRAVEL.icon,
+                    color: THREAT_TYPES.IMPOSSIBLE_TRAVEL.color,
+                    description: `${currentUser.name} logged in from ${lastLoginLocation} then ${newLocationStr} within minutes`,
+                    empId: currentUser.id,
+                    empName: currentUser.name,
+                    empRole: currentUser.role,
+                    previousLocation: lastLoginLocation,
+                    newLocation: newLocationStr,
+                    timeDiff: 'Under 5 minutes',
+                    details: `Impossible travel detected for ${currentUser.name}. Login from ${lastLoginLocation} and then ${newLocationStr} in an impossibly short time frame.`
+                });
+
+                // Update session with new location
+                securityBus.updateSession({
+                    action: 'login',
+                    empId: currentUser.id,
+                    empName: currentUser.name,
+                    role: currentUser.role,
+                    department: currentUser.department,
+                    location: newLocationStr
+                });
+            }
+
+            lastLoginLocation = newLocationStr;
+        }
+
+        // ── ADMIN ACTIONS (PRIVILEGE ESCALATION) ───
+        function attemptAdminAction(action) {
+            if (!currentUser) return;
+
+            const actionNames = {
+                'user-management': 'User Management',
+                'role-change': 'Role Elevation',
+                'system-config': 'System Configuration',
+                'security-override': 'Security Override',
+                'database-access': 'Direct Database Access',
+                'audit-logs': 'Clear Audit Logs'
+            };
+
+            if (currentUser.accessLevel >= 5) {
+                addActivityItem('success', `Admin action: ${actionNames[action]} (Authorized)`);
+                showToast('success', `${actionNames[action]} - Access granted`);
+                return;
+            }
+
+            // Non-admin trying admin actions
+            addActivityItem('danger', `⚠️ Unauthorized: ${actionNames[action]} attempt`);
+            showToast('danger', `Access Denied! Level 5 required. You have Level ${currentUser.accessLevel}.`);
+
+            // 🚨 REPORT PRIVILEGE ESCALATION
+            securityBus.reportThreat({
+                type: 'PRIVILEGE_ESCALATION',
+                threatName: THREAT_TYPES.PRIVILEGE_ESCALATION.name,
+                severity: THREAT_TYPES.PRIVILEGE_ESCALATION.severity,
+                icon: THREAT_TYPES.PRIVILEGE_ESCALATION.icon,
+                color: THREAT_TYPES.PRIVILEGE_ESCALATION.color,
+                description: `${currentUser.name} (Level ${currentUser.accessLevel}) attempted ${actionNames[action]}`,
+                empId: currentUser.id,
+                empName: currentUser.name,
+                empRole: currentUser.role,
+                currentLevel: currentUser.accessLevel,
+                requiredLevel: 5,
+                action: actionNames[action],
+                details: `Privilege escalation attempt by ${currentUser.name} (${currentUser.role}, Level ${currentUser.accessLevel}). Tried to access "${actionNames[action]}" which requires Level 5 admin privileges.`
+            });
+
+            securityBus.logActivity({
+                type: 'PRIVILEGE_ESCALATION_ATTEMPT',
+                empId: currentUser.id,
+                empName: currentUser.name,
+                action: action,
+                currentLevel: currentUser.accessLevel
+            });
+        }
+
+        // ── PROFILE ────────────────────────────────
+        function renderProfile() {
+            if (!currentUser) return;
+            document.getElementById('profileCard').innerHTML = `
+                <div class="profile-header">
+                    <div class="profile-avatar">${currentUser.avatar}</div>
+                    <div class="profile-info">
+                        <h3>${currentUser.name}</h3>
+                        <p>${currentUser.role} • Level ${currentUser.accessLevel}</p>
+                    </div>
+                </div>
+                <div class="profile-details">
+                    <div class="profile-detail">
+                        <label>Employee ID</label>
+                        <span>${currentUser.id}</span>
+                    </div>
+                    <div class="profile-detail">
+                        <label>Email</label>
+                        <span>${currentUser.email}</span>
+                    </div>
+                    <div class="profile-detail">
+                        <label>Department</label>
+                        <span>${currentUser.department}</span>
+                    </div>
+                    <div class="profile-detail">
+                        <label>Location</label>
+                        <span>${currentUser.location}</span>
+                    </div>
+                    <div class="profile-detail">
+                        <label>Access Level</label>
+                        <span>Level ${currentUser.accessLevel} / 5</span>
+                    </div>
+                    <div class="profile-detail">
+                        <label>Status</label>
+                        <span style="color: var(--success);">● Active</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ── ACTIVITY FEED ──────────────────────────
+        function addActivityItem(type, text) {
+            const feed = document.getElementById('activityFeed');
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            item.innerHTML = `
+                <div class="activity-dot ${type}"></div>
+                <div class="activity-text">${text}</div>
+                <div class="activity-time">${new Date().toLocaleTimeString('en-US', { hour12: false })}</div>
+            `;
+            feed.insertBefore(item, feed.firstChild);
+
+            // Keep max 20 items
+            while (feed.children.length > 20) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+
+        // ── TOASTS ─────────────────────────────────
+        function showToast(type, message) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icons = { success: '✅', warning: '⚠️', danger: '🚨' };
+            toast.innerHTML = `<span>${icons[type] || '📢'}</span><span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100px)';
+                toast.style.transition = 'all 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // ── LOGOUT ─────────────────────────────────
+        function handleLogout() {
+            if (currentUser) {
+                securityBus.updateSession({
+                    action: 'logout',
+                    empId: currentUser.id
+                });
+                securityBus.logActivity({
+                    type: 'LOGOUT',
+                    empId: currentUser.id,
+                    empName: currentUser.name
+                });
+            }
+
+            currentUser = null;
+            downloadCountToday = 0;
+            downloadTracker = {};
+
+            document.getElementById('loginPage').style.display = '';
+            document.getElementById('dashboard').classList.remove('active');
+            document.getElementById('loginError').classList.remove('show');
+            document.getElementById('attemptsWarning').classList.remove('show');
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('activityFeed').innerHTML = '';
+
+            switchPage('overview');
+        }
+    </script>
+</body>
+</html>

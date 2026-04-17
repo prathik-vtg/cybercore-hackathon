@@ -1,0 +1,1957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberCore SOC - Security Operations Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #06060f;
+            --bg-card: rgba(12, 12, 30, 0.9);
+            --border: rgba(255,255,255,0.06);
+            --accent: #00d4ff;
+            --neon-green: #00ff88;
+            --neon-red: #ff1744;
+            --neon-orange: #ff9100;
+            --neon-yellow: #ffd600;
+            --neon-purple: #d500f9;
+            --text: #c8d6e5;
+            --text-dim: rgba(255,255,255,0.3);
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg);
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* ── Scanline Effect ─── */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0,0,0,0.03) 2px,
+                rgba(0,0,0,0.03) 4px
+            );
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* ── Matrix Rain Background ─── */
+        #matrixCanvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            opacity: 0.06;
+        }
+
+        /* ── Header ─── */
+        .soc-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1.5rem;
+            background: rgba(6,6,15,0.95);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(20px);
+        }
+        .soc-header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .soc-logo {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.1rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff1744, #ff9100);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 3px;
+        }
+        .soc-badge {
+            padding: 0.3rem 0.8rem;
+            background: rgba(255,23,68,0.15);
+            border: 1px solid rgba(255,23,68,0.3);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--neon-red);
+            letter-spacing: 2px;
+            animation: badgePulse 2s ease-in-out infinite;
+        }
+        @keyframes badgePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .soc-header-center {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+        .header-stat {
+            text-align: center;
+        }
+        .header-stat-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .header-stat-label {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .soc-header-right {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+        .soc-clock {
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+        .soc-date {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.3rem 0.8rem;
+            background: rgba(0,255,136,0.08);
+            border: 1px solid rgba(0,255,136,0.2);
+            border-radius: 8px;
+        }
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            box-shadow: 0 0 10px var(--neon-green);
+            animation: statusPulse 1.5s ease-in-out infinite;
+        }
+        @keyframes statusPulse {
+            0%, 100% { box-shadow: 0 0 5px var(--neon-green); }
+            50% { box-shadow: 0 0 20px var(--neon-green); }
+        }
+        .status-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--neon-green);
+            letter-spacing: 1px;
+        }
+        .clear-data-btn {
+            padding: 0.35rem 0.7rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            transition: all 0.3s;
+        }
+        .clear-data-btn:hover {
+            background: rgba(255,23,68,0.1);
+            border-color: rgba(255,23,68,0.3);
+            color: var(--neon-red);
+        }
+        .report-btn {
+            padding: 0.35rem 0.8rem;
+            background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(139,92,246,0.15));
+            border: 1px solid rgba(0,212,255,0.3);
+            color: var(--accent);
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .report-btn:hover {
+            background: linear-gradient(135deg, rgba(0,212,255,0.25), rgba(139,92,246,0.25));
+            border-color: rgba(0,212,255,0.5);
+            box-shadow: 0 0 20px rgba(0,212,255,0.15);
+            transform: translateY(-1px);
+        }
+        .report-btn:active {
+            transform: translateY(0);
+        }
+
+        /* ── Threat Level Bar ─── */
+        .threat-level-bar {
+            padding: 0.5rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(10,10,20,0.8);
+            border-bottom: 1px solid var(--border);
+        }
+        .threat-level-label {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            white-space: nowrap;
+        }
+        .threat-level-gauge {
+            flex: 1;
+            height: 6px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+        .threat-level-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .threat-level-fill::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -4px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: inherit;
+            box-shadow: 0 0 15px currentColor;
+        }
+        .threat-level-text {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        /* ── Main Grid Layout ─── */
+        .soc-grid {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            grid-template-rows: auto 1fr;
+            gap: 1px;
+            min-height: calc(100vh - 90px);
+            position: relative;
+            z-index: 1;
+            background: rgba(255,255,255,0.02);
+        }
+
+        /* ── Threat Stats Row ─── */
+        .threat-stats {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1px;
+            background: rgba(255,255,255,0.02);
+        }
+        .threat-stat-card {
+            background: var(--bg);
+            padding: 1.25rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s;
+            cursor: default;
+            position: relative;
+            overflow: hidden;
+        }
+        .threat-stat-card::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: var(--card-color);
+            opacity: 0.6;
+        }
+        .threat-stat-card:hover {
+            background: rgba(15,15,35,0.9);
+        }
+        .threat-stat-card.has-threats {
+            animation: threatCardPulse 3s ease-in-out infinite;
+        }
+        @keyframes threatCardPulse {
+            0%, 100% { background: var(--bg); }
+            50% { background: rgba(20,15,30,1); }
+        }
+        .threat-stat-icon {
+            font-size: 1.8rem;
+            filter: grayscale(0.3);
+        }
+        .threat-stat-info {
+            flex: 1;
+        }
+        .threat-stat-count {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #fff;
+        }
+        .threat-stat-name {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .threat-stat-severity {
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.55rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        /* ── Live Threat Feed ─── */
+        .threat-feed-panel {
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .panel-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .panel-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: 1.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .panel-title .live-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--neon-red);
+            box-shadow: 0 0 10px var(--neon-red);
+            animation: livePulse 1s ease-in-out infinite;
+        }
+        @keyframes livePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .panel-count {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        .threat-feed {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        .threat-feed::-webkit-scrollbar { width: 4px; }
+        .threat-feed::-webkit-scrollbar-track { background: transparent; }
+        .threat-feed::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+        .threat-item {
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 12px;
+            border-left: 3px solid var(--threat-color);
+            background: rgba(255,255,255,0.02);
+            animation: threatSlideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .threat-item:hover {
+            background: rgba(255,255,255,0.04);
+        }
+        .threat-item.new {
+            animation: threatFlash 1s ease-out;
+        }
+        @keyframes threatSlideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes threatFlash {
+            0% { background: rgba(255,23,68,0.2); }
+            100% { background: rgba(255,255,255,0.02); }
+        }
+
+        .threat-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        .threat-item-type {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .threat-item-icon { font-size: 1.1rem; }
+        .threat-item-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #fff;
+        }
+        .threat-item-severity {
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.55rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .severity-CRITICAL {
+            background: rgba(255,23,68,0.15);
+            color: var(--neon-red);
+        }
+        .severity-HIGH {
+            background: rgba(255,145,0,0.15);
+            color: var(--neon-orange);
+        }
+        .severity-MEDIUM {
+            background: rgba(255,214,0,0.15);
+            color: var(--neon-yellow);
+        }
+        .severity-LOW {
+            background: rgba(0,255,136,0.15);
+            color: var(--neon-green);
+        }
+
+        .threat-item-desc {
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+        .threat-item-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--text-dim);
+        }
+        .threat-item-id {
+            color: var(--accent);
+        }
+
+        /* ── Right Panel: Sessions + Details ─── */
+        .right-panel {
+            background: var(--bg);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Active Sessions */
+        .sessions-section {
+            flex-shrink: 0;
+            max-height: 45%;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 1px solid var(--border);
+        }
+        .sessions-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        .session-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.7rem 0.75rem;
+            border-radius: 10px;
+            margin-bottom: 0.25rem;
+            transition: all 0.3s;
+            animation: fadeIn 0.3s;
+        }
+        .session-item:hover {
+            background: rgba(255,255,255,0.03);
+        }
+        .session-avatar {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), var(--neon-purple));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .session-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .session-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .session-detail {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .session-status-badge {
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.55rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+        .status-SAFE { background: rgba(0,255,136,0.15); color: #00ff88; }
+        .status-SUSPICIOUS { background: rgba(255,214,0,0.15); color: #ffd600; }
+        .status-WARNING { background: rgba(255,145,0,0.15); color: #ff9100; }
+        .status-CRITICAL { background: rgba(255,23,68,0.15); color: #ff1744; }
+        .status-COMPROMISED { background: rgba(255,0,0,0.3); color: #ff0000; box-shadow: 0 0 8px rgba(255,0,0,0.5); }
+        .session-times {
+            font-size: 0.55rem;
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 0.2rem;
+        }
+        .time-in { color: rgba(0,255,136,0.8); margin-right: 0.5rem; }
+        .time-out { color: rgba(255,145,0,0.8); }
+
+        /* Threat Detail Panel */
+        .detail-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .detail-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        .detail-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-dim);
+            text-align: center;
+        }
+        .detail-empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+        .detail-empty-text {
+            font-size: 0.85rem;
+        }
+        .detail-empty-sub {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.2);
+            margin-top: 0.25rem;
+        }
+
+        .detail-card {
+            animation: fadeIn 0.3s;
+        }
+        .detail-threat-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .detail-threat-icon {
+            font-size: 2rem;
+        }
+        .detail-threat-info h3 {
+            font-size: 1rem;
+            color: #fff;
+            margin-bottom: 0.25rem;
+        }
+        .detail-threat-info p {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .detail-field {
+            margin-bottom: 1rem;
+        }
+        .detail-field-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-dim);
+            margin-bottom: 0.3rem;
+        }
+        .detail-field-value {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.8);
+            padding: 0.6rem 0.8rem;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            word-break: break-word;
+            line-height: 1.5;
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1.25rem;
+        }
+        .detail-action-btn {
+            flex: 1;
+            padding: 0.6rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.03);
+            color: var(--text);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        .detail-action-btn:hover {
+            background: rgba(255,255,255,0.06);
+        }
+        .detail-action-btn.primary {
+            background: rgba(255,23,68,0.15);
+            border-color: rgba(255,23,68,0.3);
+            color: var(--neon-red);
+        }
+        .detail-action-btn.primary:hover {
+            background: rgba(255,23,68,0.25);
+        }
+
+        /* ── Empty State ─── */
+        .feed-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            text-align: center;
+            height: 100%;
+        }
+        .feed-empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.15;
+        }
+        .feed-empty-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            color: var(--neon-green);
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+        }
+        .feed-empty-text {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            max-width: 300px;
+            line-height: 1.5;
+        }
+
+        /* ── Alert Overlay ─── */
+        .alert-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 5000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+        }
+        .alert-overlay.show {
+            display: flex;
+            animation: fadeIn 0.3s;
+        }
+        .alert-box {
+            background: var(--bg-card);
+            border: 2px solid var(--neon-red);
+            border-radius: 20px;
+            padding: 2.5rem;
+            text-align: center;
+            max-width: 450px;
+            animation: alertBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 0 60px rgba(255,23,68,0.3);
+        }
+        @keyframes alertBounce {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .alert-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: alertPulse 0.5s ease-in-out infinite alternate;
+        }
+        @keyframes alertPulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+        .alert-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--neon-red);
+            margin-bottom: 0.5rem;
+            letter-spacing: 3px;
+        }
+        .alert-message {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+        .alert-detail {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-bottom: 1.5rem;
+        }
+        .alert-dismiss {
+            padding: 0.7rem 2rem;
+            background: var(--neon-red);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+        }
+        .alert-dismiss:hover {
+            box-shadow: 0 0 30px rgba(255,23,68,0.5);
+        }
+
+        /* ── Sound Toggle ─── */
+        .sound-toggle {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            z-index: 200;
+            padding: 0.5rem 1rem;
+            background: rgba(15,15,35,0.9);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .sound-toggle:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* ── Animations ─── */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* ── No Sessions ─── */
+        .no-sessions {
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+        }
+        .no-sessions-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.3;
+        }
+
+        /* ── Scrollbar ─── */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+        /* ── Responsive ─── */
+        @media (max-width: 1200px) {
+            .soc-grid { grid-template-columns: 1fr 320px; }
+        }
+        @media (max-width: 900px) {
+            .soc-grid { grid-template-columns: 1fr; }
+            .threat-stats { grid-template-columns: repeat(3, 1fr); }
+            .right-panel { max-height: 400px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Matrix Canvas -->
+    <canvas id="matrixCanvas"></canvas>
+
+    <!-- Alert Overlay -->
+    <div class="alert-overlay" id="alertOverlay">
+        <div class="alert-box">
+            <div class="alert-icon" id="alertIcon">🚨</div>
+            <div class="alert-title" id="alertTitle">THREAT DETECTED</div>
+            <div class="alert-message" id="alertMessage">A new security threat has been identified.</div>
+            <div class="alert-detail" id="alertDetail"></div>
+            <button class="alert-dismiss" onclick="dismissAlert()">ACKNOWLEDGE</button>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="soc-header">
+        <div class="soc-header-left">
+            <div class="soc-logo">CYBERCORE SOC</div>
+            <div class="soc-badge">LIVE MONITORING</div>
+        </div>
+        <div class="soc-header-center">
+            <div class="header-stat">
+                <div class="header-stat-value" id="totalThreats">0</div>
+                <div class="header-stat-label">Total Threats</div>
+            </div>
+            <div class="header-stat">
+                <div class="header-stat-value" id="criticalCount">0</div>
+                <div class="header-stat-label">Critical</div>
+            </div>
+            <div class="header-stat">
+                <div class="header-stat-value" id="activeSessions">0</div>
+                <div class="header-stat-label">Active Sessions</div>
+            </div>
+        </div>
+        <div class="soc-header-right">
+            <div>
+                <div class="soc-clock" id="socClock">00:00:00</div>
+                <div class="soc-date" id="socDate"></div>
+            </div>
+            <div class="system-status">
+                <div class="status-dot"></div>
+                <span class="status-text">ONLINE</span>
+            </div>
+            <button class="report-btn" style="background: linear-gradient(135deg, rgba(255,23,68,0.15), rgba(255,145,0,0.15)); border-color: rgba(255,23,68,0.3);" id="demoToggleBtn" onclick="toggleAutoDemo()">🚀 START DEMO</button>
+            <button class="report-btn" onclick="generatePDFReport()">📄 DOWNLOAD REPORT</button>
+            <button class="clear-data-btn" onclick="clearAllData()">RESET DATA</button>
+        </div>
+    </header>
+
+    <!-- Threat Level Bar -->
+    <div class="threat-level-bar">
+        <div class="threat-level-label">THREAT LEVEL</div>
+        <div class="threat-level-gauge">
+            <div class="threat-level-fill" id="threatLevelFill" style="width: 5%; background: var(--neon-green); color: var(--neon-green);"></div>
+        </div>
+        <div class="threat-level-text" id="threatLevelText" style="color: var(--neon-green);">NORMAL</div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="soc-grid">
+        <!-- Threat Stats Row -->
+        <div class="threat-stats" id="threatStats">
+            <!-- Populated dynamically -->
+        </div>
+
+        <!-- Left: Threat Feed -->
+        <div class="threat-feed-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <div class="live-dot"></div>
+                    LIVE THREAT FEED
+                </div>
+                <div class="panel-count" id="feedCount">0 events</div>
+            </div>
+            <div class="threat-feed" id="threatFeed">
+                <div class="feed-empty" id="feedEmpty">
+                    <div class="feed-empty-icon">🛡️</div>
+                    <div class="feed-empty-title">ALL CLEAR</div>
+                    <div class="feed-empty-text">No threats detected. The system is actively monitoring all employee activities in real-time.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <!-- Active Sessions / Personnel -->
+            <div class="sessions-section">
+                <div class="panel-header">
+                    <div class="panel-title">👥 PERSONNEL STATUS</div>
+                    <div class="panel-count" id="sessionCount">0 tracked</div>
+                </div>
+                <div class="sessions-list" id="sessionsList">
+                    <div class="no-sessions" id="noSessions">
+                        <div class="no-sessions-icon">👤</div>
+                        <div>No personnel activity</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Threat Details -->
+            <div class="detail-section">
+                <div class="panel-header">
+                    <div class="panel-title">🔍 THREAT DETAILS</div>
+                </div>
+                <div class="detail-content" id="detailContent">
+                    <div class="detail-empty">
+                        <div class="detail-empty-icon">🎯</div>
+                        <div class="detail-empty-text">Select a threat to view details</div>
+                        <div class="detail-empty-sub">Click on any threat in the feed</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sound Toggle -->
+    <button class="sound-toggle" id="soundToggle" onclick="toggleSound()">
+        🔊 Sound: ON
+    </button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        if (typeof window.jspdf === 'undefined') {
+            document.write('<script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"><\/script>');
+        }
+    </script>
+    <script src="shared.js"></script>
+    <script>
+        // ── State ──────────────────────────────────
+        let threats = [];
+        let threatCounts = {
+            BRUTE_FORCE: 0,
+            DATA_EXFILTRATION: 0,
+            INSIDER_THREAT: 0,
+            IMPOSSIBLE_TRAVEL: 0,
+            PRIVILEGE_ESCALATION: 0
+        };
+        let soundEnabled = true;
+        let selectedThreat = null;
+
+        // ── Audio Context for Alert Sounds ─────────
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        function playAlertSound(severity) {
+            if (!soundEnabled) return;
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (severity === 'CRITICAL') {
+                    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(440, audioCtx.currentTime + 0.1);
+                    osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.2);
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.5);
+                } else if (severity === 'HIGH') {
+                    osc.frequency.setValueAtTime(660, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
+                } else {
+                    osc.frequency.setValueAtTime(520, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.2);
+                }
+            } catch (e) {}
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundToggle').innerHTML = soundEnabled ? '🔊 Sound: ON' : '🔇 Sound: OFF';
+        }
+
+        // ── Clock ──────────────────────────────────
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('socClock').textContent = now.toLocaleTimeString('en-US', { hour12: false });
+            document.getElementById('socDate').textContent = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // ── Matrix Rain ────────────────────────────
+        function initMatrix() {
+            const canvas = document.getElementById('matrixCanvas');
+            const ctx = canvas.getContext('2d');
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()アカサタナハマヤラワ';
+            const fontSize = 14;
+            const columns = Math.floor(canvas.width / fontSize);
+            const drops = Array(columns).fill(1);
+
+            function draw() {
+                ctx.fillStyle = 'rgba(6,6,15,0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = '#00ff88';
+                ctx.font = fontSize + 'px monospace';
+
+                for (let i = 0; i < drops.length; i++) {
+                    const text = chars[Math.floor(Math.random() * chars.length)];
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    drops[i]++;
+                }
+            }
+
+            setInterval(draw, 50);
+        }
+        initMatrix();
+
+        // ── Initialize Threat Stats ────────────────
+        function renderThreatStats() {
+            const container = document.getElementById('threatStats');
+            container.innerHTML = '';
+
+            Object.entries(THREAT_TYPES).forEach(([key, threat]) => {
+                const count = threatCounts[key] || 0;
+                const card = document.createElement('div');
+                card.className = `threat-stat-card ${count > 0 ? 'has-threats' : ''}`;
+                card.style.setProperty('--card-color', threat.color);
+                card.id = `stat-${key}`;
+                card.innerHTML = `
+                    <div class="threat-stat-icon">${threat.icon}</div>
+                    <div class="threat-stat-info">
+                        <div class="threat-stat-count" id="count-${key}">${count}</div>
+                        <div class="threat-stat-name">${threat.name.replace(' Attack', '')}</div>
+                    </div>
+                    <div class="threat-stat-severity severity-${threat.severity}" style="background: ${threat.color}22; color: ${threat.color};">${threat.severity}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+        renderThreatStats();
+
+        // ── Handle New Threat ──────────────────────
+        function handleNewThreat(threat) {
+            // Add to local list
+            threats.unshift(threat);
+
+            // Update counts
+            if (threatCounts[threat.type] !== undefined) {
+                threatCounts[threat.type]++;
+            }
+
+            // Update UI
+            updateThreatStats();
+            addThreatToFeed(threat);
+            updateThreatLevel();
+            updateHeaderStats();
+
+            // Play sound
+            playAlertSound(threat.severity);
+
+            // Show alert for critical threats
+            if (threat.severity === 'CRITICAL') {
+                showAlertOverlay(threat);
+            }
+
+            // Flash the border red briefly
+            document.body.style.boxShadow = `inset 0 0 100px rgba(255,23,68,0.15)`;
+            setTimeout(() => {
+                document.body.style.boxShadow = 'none';
+            }, 1000);
+        }
+
+        function updateThreatStats() {
+            Object.keys(threatCounts).forEach(key => {
+                const countEl = document.getElementById(`count-${key}`);
+                if (countEl) {
+                    countEl.textContent = threatCounts[key];
+                    if (threatCounts[key] > 0) {
+                        const card = document.getElementById(`stat-${key}`);
+                        card.classList.add('has-threats');
+                        // Animate count change
+                        countEl.style.transform = 'scale(1.3)';
+                        countEl.style.color = THREAT_TYPES[key].color;
+                        setTimeout(() => {
+                            countEl.style.transform = 'scale(1)';
+                            countEl.style.transition = 'transform 0.3s';
+                        }, 300);
+                    }
+                }
+            });
+        }
+
+        function addThreatToFeed(threat) {
+            const feed = document.getElementById('threatFeed');
+            const empty = document.getElementById('feedEmpty');
+            if (empty) empty.style.display = 'none';
+
+            const item = document.createElement('div');
+            item.className = 'threat-item new';
+            item.style.setProperty('--threat-color', threat.color);
+            item.onclick = () => showThreatDetail(threat);
+            item.innerHTML = `
+                <div class="threat-item-header">
+                    <div class="threat-item-type">
+                        <span class="threat-item-icon">${threat.icon}</span>
+                        <span class="threat-item-name">${threat.threatName}</span>
+                    </div>
+                    <span class="threat-item-severity severity-${threat.severity}">${threat.severity}</span>
+                </div>
+                <div class="threat-item-desc">${threat.description}</div>
+                <div class="threat-item-meta">
+                    <span class="threat-item-id">${threat.id}</span>
+                    <span>${formatTime(threat.timestamp)}</span>
+                    ${threat.sourceIP ? `<span>IP: ${threat.sourceIP}</span>` : ''}
+                    ${threat.empName ? `<span>👤 ${threat.empName}</span>` : ''}
+                </div>
+            `;
+            feed.insertBefore(item, feed.firstChild);
+
+            // Update feed count
+            document.getElementById('feedCount').textContent = `${threats.length} events`;
+
+            // Remove 'new' class after animation
+            setTimeout(() => item.classList.remove('new'), 1000);
+        }
+
+        // ── Threat Level ───────────────────────────
+        function updateThreatLevel() {
+            const total = threats.length;
+            const critical = threatCounts.BRUTE_FORCE + threatCounts.PRIVILEGE_ESCALATION;
+            const high = threatCounts.DATA_EXFILTRATION + threatCounts.INSIDER_THREAT;
+
+            let level, color, percentage;
+
+            if (critical >= 3 || total >= 8) {
+                level = 'CRITICAL';
+                color = 'var(--neon-red)';
+                percentage = 95;
+            } else if (critical >= 2 || total >= 5) {
+                level = 'SEVERE';
+                color = '#ff6600';
+                percentage = 75;
+            } else if (critical >= 1 || high >= 2 || total >= 3) {
+                level = 'ELEVATED';
+                color = 'var(--neon-orange)';
+                percentage = 55;
+            } else if (total >= 1) {
+                level = 'GUARDED';
+                color = 'var(--neon-yellow)';
+                percentage = 30;
+            } else {
+                level = 'NORMAL';
+                color = 'var(--neon-green)';
+                percentage = 5;
+            }
+
+            const fill = document.getElementById('threatLevelFill');
+            const text = document.getElementById('threatLevelText');
+
+            fill.style.width = percentage + '%';
+            fill.style.background = color;
+            fill.style.color = color;
+            text.style.color = color;
+            text.textContent = level;
+        }
+
+        // ── Header Stats ───────────────────────────
+        function updateHeaderStats() {
+            document.getElementById('totalThreats').textContent = threats.length;
+            document.getElementById('criticalCount').textContent =
+                threats.filter(t => t.severity === 'CRITICAL').length;
+        }
+
+        // ── Threat Detail ──────────────────────────
+        function showThreatDetail(threat) {
+            selectedThreat = threat;
+            const container = document.getElementById('detailContent');
+
+            let fieldsHTML = '';
+
+            if (threat.empName) {
+                fieldsHTML += `
+                    <div class="detail-field">
+                        <div class="detail-field-label">Employee</div>
+                        <div class="detail-field-value">${threat.empName} ${threat.empRole ? '(' + threat.empRole + ')' : ''}</div>
+                    </div>`;
+            }
+            if (threat.targetAccount) {
+                fieldsHTML += `
+                    <div class="detail-field">
+                        <div class="detail-field-label">Target Account</div>
+                        <div class="detail-field-value">${threat.targetAccount}</div>
+                    </div>`;
+            }
+            if (threat.sourceIP) {
+                fieldsHTML += `
+                    <div class="detail-field">
+                        <div class="detail-field-label">Source IP</div>
+                        <div class="detail-field-value">${threat.sourceIP}</div>
+                    </div>`;
+            }
+            if (threat.previousLocation) {
+                fieldsHTML += `
+                    <div class="detail-field">
+                        <div class="detail-field-label">Travel Route</div>
+                        <div class="detail-field-value">${threat.previousLocation} → ${threat.newLocation}</div>
+                    </div>`;
+            }
+            if (threat.targetFile) {
+                fieldsHTML += `
+                    <div class="detail-field">
+                        <div class="detail-field-label">Target File</div>
+                        <div class="detail-field-value">${threat.targetFile} (${threat.targetDepartment})</div>
+                    </div>`;
+            }
+            if (threat.attemptCount) {
+                fieldsHTML += `
+                    <div class="detail-field">
+                        <div class="detail-field-label">Attempt Count</div>
+                        <div class="detail-field-value">${threat.attemptCount} attempts</div>
+                    </div>`;
+            }
+            if (threat.downloadCount) {
+                fieldsHTML += `
+                    <div class="detail-field">
+                        <div class="detail-field-label">Files Downloaded</div>
+                        <div class="detail-field-value">${threat.downloadCount} files in rapid succession</div>
+                    </div>`;
+            }
+            if (threat.action) {
+                fieldsHTML += `
+                    <div class="detail-field">
+                        <div class="detail-field-label">Action Attempted</div>
+                        <div class="detail-field-value">${threat.action} (Required: Level ${threat.requiredLevel}, Has: Level ${threat.currentLevel})</div>
+                    </div>`;
+            }
+            if (threat.details) {
+                fieldsHTML += `
+                    <div class="detail-field">
+                        <div class="detail-field-label">Full Analysis</div>
+                        <div class="detail-field-value">${threat.details}</div>
+                    </div>`;
+            }
+
+            container.innerHTML = `
+                <div class="detail-card">
+                    <div class="detail-threat-header">
+                        <div class="detail-threat-icon">${threat.icon}</div>
+                        <div class="detail-threat-info">
+                            <h3>${threat.threatName}</h3>
+                            <p>${threat.id} • ${formatDateTime(threat.timestamp)}</p>
+                        </div>
+                        <span class="threat-item-severity severity-${threat.severity}">${threat.severity}</span>
+                    </div>
+
+                    ${fieldsHTML}
+
+                    <div class="detail-actions">
+                        <button class="detail-action-btn primary" onclick="blockThreat('${threat.id}')">🚫 Block Source</button>
+                        <button class="detail-action-btn" onclick="investigateThreat('${threat.id}')">🔍 Investigate</button>
+                        <button class="detail-action-btn" onclick="dismissThreatDetail()">✓ Dismiss</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function blockThreat(threatId) {
+            alert(`🚫 Source blocked for threat ${threatId}. IP address has been added to the firewall blacklist.`);
+        }
+
+        function investigateThreat(threatId) {
+            alert(`🔍 Investigation initiated for threat ${threatId}. A ticket has been created for the SOC team.`);
+        }
+
+        function dismissThreatDetail() {
+            document.getElementById('detailContent').innerHTML = `
+                <div class="detail-empty">
+                    <div class="detail-empty-icon">🎯</div>
+                    <div class="detail-empty-text">Select a threat to view details</div>
+                    <div class="detail-empty-sub">Click on any threat in the feed</div>
+                </div>
+            `;
+        }
+
+        // ── Sessions / Personnel Status ────────────────
+        function updateSessions(sessionsParam) {
+            const list = document.getElementById('sessionsList');
+            
+            // Re-build employee map identically to the PDF logic
+            const activities = JSON.parse(localStorage.getItem('activity-log') || '[]');
+            const employeeMap = {};
+            const activeSessions = securityBus.getSessions();
+
+            activities.forEach(act => {
+                if (!act.empId) return;
+                if (!employeeMap[act.empId]) {
+                    employeeMap[act.empId] = {
+                        id: act.empId,
+                        name: act.empName || 'Unknown',
+                        role: act.role || '',
+                        location: act.location || '',
+                        logins: [],
+                        logouts: [],
+                        threats: []
+                    };
+                }
+                const emp = employeeMap[act.empId];
+                if (act.type === 'LOGIN_SUCCESS') {
+                    emp.logins.push(act.timestamp);
+                    emp.role = act.role || emp.role;
+                    emp.location = act.location || emp.location;
+                } else if (act.type === 'LOGOUT') {
+                    emp.logouts.push(act.timestamp);
+                }
+            });
+
+            threats.forEach(t => {
+                if (t.empId && employeeMap[t.empId]) {
+                    employeeMap[t.empId].threats.push(t);
+                } else if (t.targetAccount) {
+                    const empFound = EMPLOYEES.find(e => e.email === t.targetAccount);
+                    if (empFound && employeeMap[empFound.id]) {
+                        employeeMap[empFound.id].threats.push(t);
+                    }
+                }
+            });
+
+            activeSessions.forEach(s => {
+                if (!employeeMap[s.empId]) {
+                    employeeMap[s.empId] = {
+                        id: s.empId,
+                        name: s.empName,
+                        role: s.role || '',
+                        location: s.location || '',
+                        logins: [s.loginTime],
+                        logouts: [],
+                        threats: []
+                    };
+                }
+            });
+
+            const employees = Object.values(employeeMap);
+
+            if (employees.length === 0) {
+                list.innerHTML = `<div class="no-sessions" id="noSessions"><div class="no-sessions-icon">👤</div><div>No personnel activity</div></div>`;
+                document.getElementById('sessionCount').textContent = '0 tracked';
+                document.getElementById('activeSessions').textContent = '0';
+                return;
+            }
+
+            // Render employees
+            list.innerHTML = employees.map(emp => {
+                let status = 'SAFE';
+                const empThreats = emp.threats || [];
+                const hasCritical = empThreats.some(t => t.severity === 'CRITICAL');
+                const hasHigh = empThreats.some(t => t.severity === 'HIGH');
+
+                if (hasCritical && empThreats.length >= 3) {
+                    status = 'COMPROMISED';
+                } else if (hasCritical) {
+                    status = 'CRITICAL';
+                } else if (hasHigh) {
+                    status = 'WARNING';
+                } else if (empThreats.length > 0) {
+                    status = 'SUSPICIOUS';
+                }
+
+                const lastLogin = emp.logins.length > 0 ? formatTime(emp.logins[0]) : 'N/A';
+                const lastLogout = emp.logouts.length > 0 ? formatTime(emp.logouts[0]) : 'Active';
+
+                return `
+                    <div class="session-item">
+                        <div class="session-avatar">${emp.name ? emp.name.split(' ').map(n=>n[0]).join('') : '??'}</div>
+                        <div class="session-info">
+                            <div class="session-name">${emp.name || 'Unknown'}</div>
+                            <div class="session-detail">${emp.role || ''} • ${emp.location || ''}</div>
+                            <div class="session-times">
+                                <span class="time-in">IN: ${lastLogin}</span>
+                                <span class="time-out">OUT: ${lastLogout}</span>
+                            </div>
+                        </div>
+                        <div class="session-status-badge status-${status}">${status}</div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('sessionCount').textContent = `${employees.length} tracked`;
+            document.getElementById('activeSessions').textContent = activeSessions.length;
+        }
+
+        // ── Alert Overlay ──────────────────────────
+        function showAlertOverlay(threat) {
+            document.getElementById('alertIcon').textContent = threat.icon;
+            document.getElementById('alertTitle').textContent = threat.threatName.toUpperCase();
+            document.getElementById('alertMessage').textContent = threat.description;
+            document.getElementById('alertDetail').textContent = `${threat.id} • ${formatTime(threat.timestamp)}`;
+            document.getElementById('alertOverlay').classList.add('show');
+        }
+
+        function dismissAlert() {
+            document.getElementById('alertOverlay').classList.remove('show');
+        }
+
+        // ── Clear Data ─────────────────────────────
+        function clearAllData() {
+            if (confirm('Clear all security data? This will reset all threat logs and sessions.')) {
+                securityBus.clearAll();
+                threats = [];
+                threatCounts = {
+                    BRUTE_FORCE: 0,
+                    DATA_EXFILTRATION: 0,
+                    INSIDER_THREAT: 0,
+                    IMPOSSIBLE_TRAVEL: 0,
+                    PRIVILEGE_ESCALATION: 0
+                };
+                renderThreatStats();
+                updateThreatLevel();
+                updateHeaderStats();
+                updateSessions([]);
+                document.getElementById('threatFeed').innerHTML = `
+                    <div class="feed-empty" id="feedEmpty">
+                        <div class="feed-empty-icon">🛡️</div>
+                        <div class="feed-empty-title">ALL CLEAR</div>
+                        <div class="feed-empty-text">No threats detected. The system is actively monitoring all employee activities in real-time.</div>
+                    </div>`;
+                document.getElementById('feedCount').textContent = '0 events';
+                dismissThreatDetail();
+            }
+        }
+
+        // ── Auto Demo UI ───────────────────────────────
+        let demoInterval = null;
+        function toggleAutoDemo() {
+            const btn = document.getElementById('demoToggleBtn');
+            if (demoInterval) {
+                clearInterval(demoInterval);
+                demoInterval = null;
+                btn.innerHTML = '🚀 START DEMO';
+                btn.style.background = 'linear-gradient(135deg, rgba(255,23,68,0.15), rgba(255,145,0,0.15))';
+                btn.style.borderColor = 'rgba(255,23,68,0.3)';
+            } else {
+                btn.innerHTML = '🛑 STOP DEMO';
+                btn.style.background = 'linear-gradient(135deg, rgba(0,255,136,0.15), rgba(0,212,255,0.15))';
+                btn.style.borderColor = 'rgba(0,255,136,0.3)';
+                
+                // Directly call the shared.js interval logic
+                console.log("🚀 Starting Auto Demo: Generating threats every 15 seconds.");
+                demoInterval = setInterval(() => {
+                    const randomEmp = EMPLOYEES[Math.floor(Math.random() * EMPLOYEES.length)];
+                    const types = Object.keys(THREAT_TYPES);
+                    const randomType = types[Math.floor(Math.random() * types.length)];
+                    const threatMeta = THREAT_TYPES[randomType];
+
+                    const demoData = {
+                        type: randomType,
+                        threatName: threatMeta.name,
+                        severity: threatMeta.severity,
+                        description: threatMeta.description + ` (Auto Demo Simulation)`,
+                        empId: randomEmp.id,
+                        empName: randomEmp.name,
+                        sourceIP: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+                        icon: threatMeta.icon,
+                        color: threatMeta.color,
+                        newLocation: randomEmp.location // Add location for the email template
+                    };
+
+                    securityBus.reportThreat(demoData);
+                }, 15000); // 15 seconds as requested
+            }
+        }
+
+        // ── Initialize ─────────────────────────────
+        function init() {
+            // Load existing events
+            const storedEvents = securityBus.getEvents();
+            storedEvents.reverse().forEach(event => {
+                threats.unshift(event);
+                if (threatCounts[event.type] !== undefined) {
+                    threatCounts[event.type]++;
+                }
+            });
+
+            if (threats.length > 0) {
+                renderThreatStats();
+                threats.forEach(t => addThreatToFeed(t));
+                updateThreatLevel();
+                updateHeaderStats();
+            }
+
+            // Load existing sessions
+            const storedSessions = securityBus.getSessions();
+            updateSessions(storedSessions);
+
+            // Listen for new threats
+            securityBus.onThreat((threat) => {
+                // Avoid duplicates
+                if (threats.find(t => t.id === threat.id)) return;
+                handleNewThreat(threat);
+            });
+
+            // Listen for session updates
+            securityBus.onSessionUpdate((sessions) => {
+                updateSessions(sessions);
+            });
+
+            // Listen for clear events
+            const origOnMessage = securityBus.channel.onmessage;
+            securityBus.channel.addEventListener('message', (e) => {
+                if (e.data.type === 'CLEAR_ALL') {
+                    clearAllData();
+                }
+            });
+        }
+
+        init();
+
+        // ── PDF REPORT GENERATION ──────────────────
+        function generatePDFReport() {
+            try {
+                if (!window.jspdf) {
+                    alert('PDF Library is still loading or failed to load. Please try again.');
+                    return;
+                }
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'mm', 'a4');
+                const pageW = doc.internal.pageSize.getWidth();
+                const pageH = doc.internal.pageSize.getHeight();
+                const margin = 15;
+                let y = margin;
+
+            // Helper: check if we need a new page
+            function checkPage(needed) {
+                if (y + needed > pageH - 20) {
+                    doc.addPage();
+                    y = margin;
+                    // Footer line on new page
+                    doc.setDrawColor(0, 212, 255);
+                    doc.setLineWidth(0.3);
+                    doc.line(margin, pageH - 12, pageW - margin, pageH - 12);
+                    doc.setFontSize(7);
+                    doc.setTextColor(120);
+                    doc.text('CyberCore SOC - Confidential Security Report', margin, pageH - 8);
+                    doc.text('Page ' + doc.internal.getNumberOfPages(), pageW - margin - 15, pageH - 8);
+                }
+            }
+
+            // ── HEADER ──
+            doc.setFillColor(10, 10, 26);
+            doc.rect(0, 0, pageW, 45, 'F');
+
+            doc.setFontSize(22);
+            doc.setTextColor(0, 212, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.text('CYBERCORE SOC', margin, 18);
+
+            doc.setFontSize(10);
+            doc.setTextColor(200);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Security Operations Center - Incident Report', margin, 26);
+
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            const now = new Date();
+            doc.text('Generated: ' + now.toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'medium' }), margin, 33);
+            doc.text('Report ID: RPT-' + Date.now().toString(36).toUpperCase(), margin, 39);
+
+            // Threat level badge in header
+            const threatLevelText = document.getElementById('threatLevelText').textContent;
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            if (threatLevelText === 'CRITICAL' || threatLevelText === 'SEVERE') {
+                doc.setTextColor(255, 23, 68);
+            } else if (threatLevelText === 'ELEVATED' || threatLevelText === 'GUARDED') {
+                doc.setTextColor(255, 145, 0);
+            } else {
+                doc.setTextColor(0, 255, 136);
+            }
+            doc.text('THREAT LEVEL: ' + threatLevelText, pageW - margin - 55, 18);
+
+            y = 55;
+
+            // ── EXECUTIVE SUMMARY ──
+            doc.setFontSize(13);
+            doc.setTextColor(0, 212, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.text('EXECUTIVE SUMMARY', margin, y);
+            y += 2;
+            doc.setDrawColor(0, 212, 255);
+            doc.setLineWidth(0.5);
+            doc.line(margin, y, margin + 55, y);
+            y += 8;
+
+            const totalThreats = threats.length;
+            const criticals = threats.filter(t => t.severity === 'CRITICAL').length;
+            const highs = threats.filter(t => t.severity === 'HIGH').length;
+            const mediums = threats.filter(t => t.severity === 'MEDIUM').length;
+            const sessions = securityBus.getSessions();
+
+            // Summary boxes
+            const boxW = (pageW - margin * 2 - 15) / 4;
+            const summaryData = [
+                { label: 'Total Threats', value: totalThreats.toString(), color: [0, 212, 255] },
+                { label: 'Critical', value: criticals.toString(), color: [255, 23, 68] },
+                { label: 'High', value: highs.toString(), color: [255, 145, 0] },
+                { label: 'Active Sessions', value: sessions.length.toString(), color: [0, 255, 136] }
+            ];
+
+            summaryData.forEach((item, i) => {
+                const bx = margin + i * (boxW + 5);
+                doc.setFillColor(20, 20, 40);
+                doc.roundedRect(bx, y, boxW, 22, 3, 3, 'F');
+                doc.setDrawColor(...item.color);
+                doc.setLineWidth(0.3);
+                doc.line(bx, y, bx, y + 22);
+
+                doc.setFontSize(16);
+                doc.setTextColor(...item.color);
+                doc.setFont('helvetica', 'bold');
+                doc.text(item.value, bx + 8, y + 11);
+
+                doc.setFontSize(6.5);
+                doc.setTextColor(150);
+                doc.setFont('helvetica', 'normal');
+                doc.text(item.label.toUpperCase(), bx + 8, y + 18);
+            });
+            y += 32;
+
+            // ── THREAT BREAKDOWN ──
+            checkPage(50);
+            doc.setFontSize(13);
+            doc.setTextColor(0, 212, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.text('THREAT BREAKDOWN BY TYPE', margin, y);
+            y += 2;
+            doc.setDrawColor(0, 212, 255);
+            doc.line(margin, y, margin + 70, y);
+            y += 8;
+
+            // Table header
+            doc.setFillColor(20, 20, 40);
+            doc.rect(margin, y, pageW - margin * 2, 8, 'F');
+            doc.setFontSize(7);
+            doc.setTextColor(0, 212, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.text('THREAT TYPE', margin + 3, y + 5.5);
+            doc.text('SEVERITY', margin + 65, y + 5.5);
+            doc.text('COUNT', margin + 100, y + 5.5);
+            doc.text('STATUS', margin + 130, y + 5.5);
+            y += 10;
+
+            Object.entries(THREAT_TYPES).forEach(([key, threat]) => {
+                checkPage(9);
+                const count = threatCounts[key] || 0;
+
+                doc.setFillColor(15, 15, 30);
+                doc.rect(margin, y, pageW - margin * 2, 8, 'F');
+
+                doc.setFontSize(7.5);
+                doc.setTextColor(220);
+                doc.setFont('helvetica', 'normal');
+                // Removed symbol (threat.icon) as it corrupts jsPDF text
+                doc.text(threat.name, margin + 3, y + 5.5);
+
+                // Severity color
+                if (threat.severity === 'CRITICAL') doc.setTextColor(255, 23, 68);
+                else if (threat.severity === 'HIGH') doc.setTextColor(255, 145, 0);
+                else if (threat.severity === 'MEDIUM') doc.setTextColor(255, 214, 0);
+                else doc.setTextColor(0, 230, 118);
+                doc.setFont('helvetica', 'bold');
+                doc.text(threat.severity, margin + 65, y + 5.5);
+
+                doc.setTextColor(255, 255, 255);
+                doc.text(count.toString(), margin + 105, y + 5.5);
+
+                if (count > 0) {
+                    doc.setTextColor(255, 23, 68);
+                    doc.text('DETECTED', margin + 130, y + 5.5);
+                } else {
+                    doc.setTextColor(0, 255, 136);
+                    doc.text('CLEAR', margin + 130, y + 5.5);
+                }
+                y += 9;
+            });
+            y += 8;
+
+            // ── EMPLOYEE ACTIVITY LOG ──
+            checkPage(40);
+            doc.setFontSize(13);
+            doc.setTextColor(0, 212, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.text('EMPLOYEE ACTIVITY LOG', margin, y);
+            y += 2;
+            doc.setDrawColor(0, 212, 255);
+            doc.line(margin, y, margin + 60, y);
+            y += 8;
+
+            // Build employee activity from activity-log in localStorage
+            const activities = JSON.parse(localStorage.getItem('activity-log') || '[]');
+            const employeeMap = {};
+
+            // Process activities to build per-employee data
+            activities.forEach(act => {
+                if (!act.empId) return;
+                if (!employeeMap[act.empId]) {
+                    employeeMap[act.empId] = {
+                        id: act.empId,
+                        name: act.empName || 'Unknown',
+                        role: act.role || '',
+                        logins: [],
+                        logouts: [],
+                        threats: [],
+                        actions: []
+                    };
+                }
+                const emp = employeeMap[act.empId];
+                if (act.type === 'LOGIN_SUCCESS') {
+                    emp.logins.push(act.timestamp);
+                    emp.role = act.role || emp.role;
+                } else if (act.type === 'LOGOUT') {
+                    emp.logouts.push(act.timestamp);
+                } else {
+                    emp.actions.push(act);
+                }
+            });
+
+            // Map threats to employees
+            threats.forEach(t => {
+                if (t.empId && employeeMap[t.empId]) {
+                    employeeMap[t.empId].threats.push(t);
+                } else if (t.targetAccount) {
+                    // For brute force, find by email
+                    const emp = EMPLOYEES.find(e => e.email === t.targetAccount);
+                    if (emp && employeeMap[emp.id]) {
+                        employeeMap[emp.id].threats.push(t);
+                    }
+                }
+            });
+
+            // Also add employees who haven't been seen in activity log but have sessions
+            sessions.forEach(s => {
+                if (!employeeMap[s.empId]) {
+                    employeeMap[s.empId] = {
+                        id: s.empId,
+                        name: s.empName,
+                        role: s.role || '',
+                        logins: [s.loginTime],
+                        logouts: [],
+                        threats: [],
+                        actions: []
+                    };
+                }
+            });
+
+            const employees = Object.values(employeeMap);
+
+            if (employees.length === 0) {
+                doc.setFontSize(9);
+                doc.setTextColor(150);
+                doc.text('No employee activity recorded yet.', margin + 3, y + 5);
+                y += 15;
+            } else {
+                // Table header
+                doc.setFillColor(20, 20, 40);
+                doc.rect(margin, y, pageW - margin * 2, 8, 'F');
+                doc.setFontSize(6.5);
+                doc.setTextColor(0, 212, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.text('EMPLOYEE', margin + 3, y + 5.5);
+                doc.text('ROLE', margin + 40, y + 5.5);
+                doc.text('LOGIN TIME', margin + 72, y + 5.5);
+                doc.text('LOGOUT TIME', margin + 108, y + 5.5);
+                doc.text('STATUS', margin + 148, y + 5.5);
+                y += 10;
+
+                employees.forEach(emp => {
+                    checkPage(12);
+
+                    // Determine status
+                    let status = 'SAFE';
+                    let statusColor = [0, 255, 136]; // green
+                    const empThreats = emp.threats || [];
+                    const hasCritical = empThreats.some(t => t.severity === 'CRITICAL');
+                    const hasHigh = empThreats.some(t => t.severity === 'HIGH');
+
+                    if (hasCritical && empThreats.length >= 3) {
+                        status = 'COMPROMISED';
+                        statusColor = [255, 0, 0];
+                    } else if (hasCritical) {
+                        status = 'CRITICAL';
+                        statusColor = [255, 23, 68];
+                    } else if (hasHigh) {
+                        status = 'WARNING';
+                        statusColor = [255, 145, 0];
+                    } else if (empThreats.length > 0) {
+                        status = 'SUSPICIOUS';
+                        statusColor = [255, 214, 0];
+                    }
+
+                    doc.setFillColor(15, 15, 30);
+                    doc.rect(margin, y, pageW - margin * 2, 10, 'F');
+
+                    doc.setFontSize(7.5);
+                    doc.setTextColor(220);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(emp.name, margin + 3, y + 4.5);
+                    doc.setFontSize(5.5);
+                    doc.setTextColor(120);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(emp.id, margin + 3, y + 8.5);
+
+                    doc.setFontSize(7);
+                    doc.setTextColor(180);
+                    doc.text(emp.role || '-', margin + 40, y + 6);
+
+                    // Login time
+                    const lastLogin = emp.logins.length > 0 ? emp.logins[0] : null;
+                    doc.setTextColor(0, 255, 136);
+                    doc.text(lastLogin ? formatDateTime(lastLogin) : 'N/A', margin + 72, y + 6);
+
+                    // Logout time
+                    const lastLogout = emp.logouts.length > 0 ? emp.logouts[0] : null;
+                    doc.setTextColor(255, 145, 0);
+                    doc.text(lastLogout ? formatDateTime(lastLogout) : 'Still Active', margin + 108, y + 6);
+
+                    // Status badge
+                    doc.setFontSize(7);
+                    doc.setTextColor(...statusColor);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(status, margin + 148, y + 6);
+
+                    y += 11;
+                });
+            }
+            y += 5;
+
+            // ── DETAILED THREAT LOG ──
+            if (threats.length > 0) {
+                checkPage(30);
+                doc.setFontSize(13);
+                doc.setTextColor(0, 212, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.text('DETAILED THREAT LOG', margin, y);
+                y += 2;
+                doc.setDrawColor(0, 212, 255);
+                doc.line(margin, y, margin + 55, y);
+                y += 8;
+
+                threats.slice(0, 30).forEach((threat, idx) => {
+                    checkPage(25);
+
+                    // Threat card background (Made smaller since description is removed)
+                    doc.setFillColor(15, 15, 30);
+                    doc.roundedRect(margin, y, pageW - margin * 2, 14, 2, 2, 'F');
+
+                    // Left color bar
+                    if (threat.severity === 'CRITICAL') doc.setFillColor(255, 23, 68);
+                    else if (threat.severity === 'HIGH') doc.setFillColor(255, 145, 0);
+                    else if (threat.severity === 'MEDIUM') doc.setFillColor(255, 214, 0);
+                    else doc.setFillColor(0, 230, 118);
+                    doc.rect(margin, y, 2.5, 14, 'F');
+
+                    // Threat info (Removed icon symbol)
+                    doc.setFontSize(8);
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(threat.threatName || threat.type, margin + 6, y + 5.5);
+
+                    // Severity
+                    if (threat.severity === 'CRITICAL') doc.setTextColor(255, 23, 68);
+                    else if (threat.severity === 'HIGH') doc.setTextColor(255, 145, 0);
+                    else doc.setTextColor(255, 214, 0);
+                    doc.setFontSize(6.5);
+                    doc.text('[' + threat.severity + ']', pageW - margin - 25, y + 5.5);
+
+                    // Meta (Moved up since description is removed)
+                    doc.setFontSize(6);
+                    doc.setTextColor(100);
+                    doc.setFont('helvetica', 'normal');
+                    const meta = threat.id + '  |  ' + formatDateTime(threat.timestamp)
+                        + (threat.empName ? '  |  ' + threat.empName : '')
+                        + (threat.sourceIP ? '  |  IP: ' + threat.sourceIP : '');
+                    doc.text(meta, margin + 6, y + 10.5);
+
+                    y += 16;
+                });
+
+                if (threats.length > 30) {
+                    doc.setFontSize(8);
+                    doc.setTextColor(150);
+                    doc.text('... and ' + (threats.length - 30) + ' more threats (truncated)', margin + 3, y + 5);
+                    y += 10;
+                }
+            }
+
+            // ── FOOTER on all pages ──
+            const totalPages = doc.internal.getNumberOfPages();
+            for (let p = 1; p <= totalPages; p++) {
+                doc.setPage(p);
+                doc.setDrawColor(0, 212, 255);
+                doc.setLineWidth(0.3);
+                doc.line(margin, pageH - 12, pageW - margin, pageH - 12);
+                doc.setFontSize(7);
+                doc.setTextColor(120);
+                doc.text('CyberCore SOC - Confidential Security Report', margin, pageH - 8);
+                doc.text('Page ' + p + ' of ' + totalPages, pageW - margin - 22, pageH - 8);
+            }
+
+            // Save
+            const filename = 'CyberCore_SOC_Report_' + now.toISOString().slice(0, 10) + '.pdf';
+            doc.save(filename);
+            
+            } catch (err) {
+                console.error(err);
+                alert('An error occurred while generating the PDF: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>

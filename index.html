@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberCore Solutions - Security Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            background: #06060f;
+            font-family: 'Inter', sans-serif;
+            color: #e0e0e0;
+            overflow: hidden;
+        }
+
+        /* ── Animated Background ─── */
+        .bg-grid {
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridMove 20s linear infinite;
+        }
+        @keyframes gridMove {
+            0% { transform: translate(0,0); }
+            100% { transform: translate(60px,60px); }
+        }
+
+        .bg-glow {
+            position: fixed;
+            width: 600px; height: 600px;
+            border-radius: 50%;
+            filter: blur(150px);
+            opacity: 0.15;
+            animation: floatGlow 15s ease-in-out infinite;
+        }
+        .bg-glow-1 { top: -200px; left: -100px; background: #00d4ff; }
+        .bg-glow-2 { bottom: -200px; right: -100px; background: #8b5cf6; animation-delay: -7s; }
+        .bg-glow-3 { top: 50%; left: 50%; transform: translate(-50%,-50%); background: #00ff88; opacity: 0.08; animation-delay: -3s; }
+
+        @keyframes floatGlow {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -20px) scale(1.1); }
+            66% { transform: translate(-20px, 30px) scale(0.9); }
+        }
+
+        /* ── Particles ─── */
+        .particles {
+            position: fixed; inset: 0;
+            pointer-events: none;
+        }
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #00d4ff;
+            border-radius: 50%;
+            animation: particleFloat linear infinite;
+            opacity: 0;
+        }
+        @keyframes particleFloat {
+            0% { transform: translateY(100vh); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(-20px); opacity: 0; }
+        }
+
+        /* ── Main Content ─── */
+        .container {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        /* ── Logo ─── */
+        .logo-section {
+            text-align: center;
+            margin-bottom: 4rem;
+            animation: fadeInUp 1s ease-out;
+        }
+        .logo-icon {
+            width: 100px; height: 100px;
+            margin: 0 auto 1.5rem;
+            position: relative;
+        }
+        .logo-icon svg {
+            width: 100%; height: 100%;
+            filter: drop-shadow(0 0 30px rgba(0,212,255,0.5));
+        }
+        .logo-ring {
+            position: absolute; inset: -10px;
+            border: 2px solid rgba(0,212,255,0.2);
+            border-radius: 50%;
+            animation: spinSlow 10s linear infinite;
+        }
+        .logo-ring::before {
+            content: '';
+            position: absolute;
+            top: -3px; left: 50%;
+            width: 6px; height: 6px;
+            background: #00d4ff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00d4ff;
+        }
+        @keyframes spinSlow { 100% { transform: rotate(360deg); } }
+
+        .logo-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00d4ff, #8b5cf6, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+        .logo-subtitle {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: rgba(0,212,255,0.6);
+            letter-spacing: 6px;
+            text-transform: uppercase;
+        }
+
+        /* ── Portals ─── */
+        .portals {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            max-width: 900px;
+            width: 100%;
+            animation: fadeInUp 1s ease-out 0.3s both;
+        }
+
+        .portal-card {
+            position: relative;
+            background: rgba(15, 15, 35, 0.8);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 24px;
+            padding: 3rem 2.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .portal-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 24px;
+            padding: 1px;
+            background: linear-gradient(135deg, transparent 20%, var(--accent) 50%, transparent 80%);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        .portal-card:hover::before { opacity: 1; }
+        .portal-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 60px var(--glow);
+        }
+
+        .portal-card.company { --accent: #00d4ff; --glow: rgba(0,212,255,0.15); }
+        .portal-card.security { --accent: #ff1744; --glow: rgba(255,23,68,0.15); }
+
+        .portal-icon {
+            width: 80px; height: 80px;
+            margin: 0 auto 1.5rem;
+            border-radius: 20px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--accent), transparent);
+            opacity: 0.9;
+            transition: transform 0.3s;
+        }
+        .portal-card:hover .portal-icon { transform: scale(1.1) rotate(5deg); }
+
+        .portal-name {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: #fff;
+        }
+        .portal-desc {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.5);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        .portal-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 2rem;
+            background: var(--accent);
+            color: #000;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+        .portal-card:hover .portal-btn {
+            box-shadow: 0 0 30px var(--glow);
+        }
+
+        /* ── Status Bar ─── */
+        .status-bar {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            background: rgba(6,6,15,0.9);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.3);
+            animation: fadeInUp 1s ease-out 0.6s both;
+        }
+        .status-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #00ff88;
+            box-shadow: 0 0 8px #00ff88;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .credentials-box {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(15,15,35,0.9);
+            border: 1px solid rgba(0,212,255,0.2);
+            border-radius: 16px;
+            padding: 1.25rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            animation: fadeInUp 1s ease-out 0.5s both;
+            max-width: 320px;
+        }
+        .credentials-box h4 {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            color: #00d4ff;
+            margin-bottom: 0.75rem;
+            letter-spacing: 2px;
+        }
+        .cred-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.25rem;
+            padding: 0.35rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .cred-row:last-child { border-bottom: none; }
+        .cred-email { color: #00d4ff; }
+        .cred-pass { color: #00ff88; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .clear-btn {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255,23,68,0.15);
+            border: 1px solid rgba(255,23,68,0.3);
+            color: #ff1744;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+        .clear-btn:hover {
+            background: rgba(255,23,68,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-glow bg-glow-3"></div>
+    <div class="particles" id="particles"></div>
+
+    <div class="container">
+        <div class="logo-section">
+            <div class="logo-icon">
+                <div class="logo-ring"></div>
+                <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M50 10 L85 30 L85 70 L50 90 L15 70 L15 30 Z" stroke="url(#grad)" stroke-width="2" fill="rgba(0,212,255,0.05)"/>
+                    <path d="M50 25 L50 55 M40 45 L60 45 M35 55 L50 70 L65 55" stroke="#00d4ff" stroke-width="2.5" stroke-linecap="round"/>
+                    <defs>
+                        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#00d4ff"/>
+                            <stop offset="100%" stop-color="#8b5cf6"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <h1 class="logo-title">CyberCore</h1>
+            <p class="logo-subtitle">Security Operations Platform</p>
+        </div>
+
+        <div class="portals">
+            <a href="company.html" class="portal-card company" id="portal-company">
+                <div class="portal-icon">🏢</div>
+                <h2 class="portal-name">Company Portal</h2>
+                <p class="portal-desc">Employee workspace with file access, dashboards, and administrative tools</p>
+                <div class="portal-btn">Enter Portal →</div>
+            </a>
+
+            <a href="security.html" class="portal-card security" id="portal-security">
+                <div class="portal-icon">🛡️</div>
+                <h2 class="portal-name">SOC Dashboard</h2>
+                <p class="portal-desc">Security Operations Center with real-time threat detection & monitoring</p>
+                <div class="portal-btn">Open SOC →</div>
+            </a>
+        </div>
+    </div>
+
+    <div class="credentials-box">
+        <h4>🔑 Test Credentials</h4>
+        <div class="cred-row"><span class="cred-email">john@cybercore.com</span><span class="cred-pass">John@2024</span></div>
+        <div class="cred-row"><span class="cred-email">sarah@cybercore.com</span><span class="cred-pass">Sarah#123</span></div>
+        <div class="cred-row"><span class="cred-email">mike@cybercore.com</span><span class="cred-pass">Mike$Dev1</span></div>
+        <div class="cred-row"><span class="cred-email">emily@cybercore.com</span><span class="cred-pass">Emily!HR9</span></div>
+        <div class="cred-row"><span class="cred-email">alex@cybercore.com</span><span class="cred-pass">Alex%Ana5</span></div>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-dot"></div>
+        <span>SYSTEM OPERATIONAL</span>
+        <span>|</span>
+        <span id="clock"></span>
+        <span>|</span>
+        <span>ENCRYPTION: AES-256</span>
+        <span>|</span>
+        <span>FIREWALL: ACTIVE</span>
+    </div>
+
+    <button class="clear-btn" onclick="clearAllData()">🗑️ Reset All Data</button>
+
+    <script src="shared.js"></script>
+    <script>
+        // Clock
+        function updateClock() {
+            document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', { hour12: false });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Particles
+        const particlesEl = document.getElementById('particles');
+        for (let i = 0; i < 40; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.animationDuration = (8 + Math.random() * 12) + 's';
+            p.style.animationDelay = Math.random() * 10 + 's';
+            p.style.width = (1 + Math.random() * 2) + 'px';
+            p.style.height = p.style.width;
+            particlesEl.appendChild(p);
+        }
+
+        function clearAllData() {
+            securityBus.clearAll();
+            alert('All security data cleared!');
+        }
+    </script>
+</body>
+</html>

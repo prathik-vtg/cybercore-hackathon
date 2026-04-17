@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberCore AI - Security Advisor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="shared.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            background: #06060f;
+            font-family: 'Inter', sans-serif;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* ── Animated Background ─── */
+        .bg-grid {
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridMove 20s linear infinite;
+        }
+        @keyframes gridMove {
+            0% { transform: translate(0,0); }
+            100% { transform: translate(60px,60px); }
+        }
+
+        .bg-glow {
+            position: fixed;
+            width: 600px; height: 600px;
+            border-radius: 50%;
+            filter: blur(150px);
+            opacity: 0.15;
+            animation: floatGlow 15s ease-in-out infinite;
+        }
+        .bg-glow-1 { top: -200px; left: -100px; background: #00d4ff; }
+        .bg-glow-2 { bottom: -200px; right: -100px; background: #8b5cf6; animation-delay: -7s; }
+
+        @keyframes floatGlow {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -20px) scale(1.1); }
+            66% { transform: translate(-20px, 30px) scale(0.9); }
+        }
+
+        /* ── Chat Container ─── */
+        .chat-container {
+            position: relative;
+            z-index: 10;
+            width: 90%;
+            max-width: 800px;
+            height: 85vh;
+            background: rgba(15, 15, 35, 0.85);
+            border: 1px solid rgba(0,212,255,0.15);
+            border-radius: 24px;
+            box-shadow: 0 0 40px rgba(0,212,255,0.1), inset 0 0 20px rgba(0,0,0,0.5);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(0,212,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .bot-avatar {
+            width: 45px; height: 45px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(139,92,246,0.2));
+            border: 1px solid rgba(0,212,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            animation: pulseGlow 2s infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 10px rgba(0,212,255,0.2); }
+            50% { box-shadow: 0 0 20px rgba(0,212,255,0.6); }
+        }
+
+        .chat-title h2 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2rem;
+            color: #00d4ff;
+            letter-spacing: 2px;
+        }
+
+        .chat-title p {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #8892b0;
+            margin-top: 0.2rem;
+        }
+        
+        .chat-window {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Scrollbar */
+        .chat-window::-webkit-scrollbar { width: 6px; }
+        .chat-window::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        .chat-window::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 3px; }
+
+        .message {
+            display: flex;
+            flex-direction: column;
+            max-width: 80%;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.bot { align-self: flex-start; }
+        .message.user { align-self: flex-end; align-items: flex-end; }
+
+        .bubble {
+            padding: 1rem 1.2rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .message.bot .bubble {
+            background: rgba(0,212,255,0.05);
+            border: 1px solid rgba(0,212,255,0.2);
+            color: #e0e0e0;
+            border-top-left-radius: 2px;
+        }
+
+        .message.user .bubble {
+            background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(139,92,246,0.2));
+            border: 1px solid rgba(0,212,255,0.4);
+            color: #fff;
+            border-top-right-radius: 2px;
+        }
+
+        .time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-top: 0.4rem;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 1rem;
+            align-self: flex-start;
+            background: transparent;
+        }
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px; height: 8px;
+            background: #00d4ff;
+            border-radius: 50%;
+            margin-right: 4px;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* ── Input Area ─── */
+        .chat-input-area {
+            padding: 1.5rem;
+            background: rgba(0,0,0,0.3);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(15, 15, 35, 0.8);
+            border: 1px solid rgba(0,212,255,0.2);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .chat-input:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 15px rgba(0,212,255,0.2);
+        }
+
+        .btn-send {
+            background: linear-gradient(135deg, #00d4ff, #8b5cf6);
+            border: none;
+            border-radius: 8px;
+            padding: 0 2rem;
+            color: white;
+            font-family: 'Orbitron', monospace;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-send:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,212,255,0.4);
+        }
+
+        .btn-send:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background Elements -->
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="bot-avatar">🤖</div>
+            <div class="chat-title">
+                <h2>CyberCore AI</h2>
+                <p>Security Response Advisor • ONLINE</p>
+            </div>
+            <div style="margin-left: auto; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button id="logoutBtn" onclick="forceLogout()" style="background: linear-gradient(135deg, rgba(255,23,68,0.2), rgba(255,145,0,0.2)); color: #ff1744; border: 1px solid rgba(255,23,68,0.5); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; transition: all 0.2s;">🛑 LOGOUT ALL DEVICES</button>
+                <a href="company.html" style="color: #00d4ff; text-decoration: none; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; border: 1px solid rgba(0,212,255,0.3); padding: 0.5rem 1rem; border-radius: 4px; transition: all 0.2s;">RETURN TO PORTAL</a>
+            </div>
+        </div>
+
+        <div class="chat-window" id="chatWindow">
+            <!-- Messages go here -->
+            <div class="typing-indicator" id="typingIndicator">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <input type="text" id="userInput" class="chat-input" placeholder="Type your message here... Example: 'What should I do?'" onkeypress="handleKeyPress(event)">
+            <button class="btn-send" onclick="sendMessage()">
+                SEND
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const chatWindow = document.getElementById('chatWindow');
+        const userInput = document.getElementById('userInput');
+        const typingIndicator = document.getElementById('typingIndicator');
+        
+        // Ensure THREAT_TYPES is loaded from shared.js
+        let threatTypesAvailable = true;
+        if (typeof THREAT_TYPES === 'undefined') {
+            console.error("shared.js not loaded properly.");
+            threatTypesAvailable = false;
+        }
+
+        // Get Threat Type from URL Link
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentThreatType = urlParams.get('threat');
+        let threatMeta = null;
+
+        if (threatTypesAvailable && currentThreatType && THREAT_TYPES[currentThreatType]) {
+            threatMeta = THREAT_TYPES[currentThreatType];
+        } else {
+            // Fallback for direct page visits
+            currentThreatType = "UNKNOWN";
+        }
+
+        // Initialize Chat
+        window.onload = () => {
+            const empName = urlParams.get('name') || 'Employee';
+            setTimeout(() => {
+                if (threatMeta) {
+                    addMessage("bot", `Hello ${empName}. I am the internal CyberCore AI. I was automatically summoned because our systems detected a **${threatMeta.name}** alert linked to your account. I am here to help you mitigate the situation. What is your status?`);
+                } else {
+                    addMessage("bot", `Hello ${empName}. I am the internal CyberCore AI Advisor. How can I assist you with your security posture today?`);
+                }
+            }, 500);
+        };
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+
+        function scrollToBottom() {
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function forceLogout() {
+            // Wipe active sessions from local storage
+            localStorage.setItem('active-sessions', JSON.stringify([]));
+            // Broadcast to other tabs so the SOC Dashboard drops them immediately
+            if (typeof securityBus !== 'undefined') {
+                securityBus.channel.postMessage({ type: 'SESSION_UPDATE', payload: [] });
+            }
+            
+            // Add confirmation directly to the chat
+            addMessage("bot", "🚨 **SUCCESS:** All active connections have been forcefully terminated across all devices. Your session is now isolated.");
+            
+            // Disable button to prevent spamming
+            const btn = document.getElementById('logoutBtn');
+            btn.disabled = true;
+            btn.style.opacity = '0.4';
+            btn.style.cursor = 'not-allowed';
+            btn.innerText = "SESSIONS TERMINATED";
+        }
+
+        function addMessage(sender, text) {
+            const time = new Date().toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit' });
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${sender}`;
+            
+            // Allow basic bold markdown
+            const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong><span style="color: #00d4ff;">$1</span></strong>');
+
+            msgDiv.innerHTML = `
+                <div class="bubble">${formattedText}</div>
+                <div class="time">${time}</div>
+            `;
+            
+            chatWindow.insertBefore(msgDiv, typingIndicator);
+            scrollToBottom();
+        }
+
+        function showTyping() {
+            typingIndicator.style.display = 'block';
+            scrollToBottom();
+        }
+
+        function hideTyping() {
+            typingIndicator.style.display = 'none';
+        }
+
+        function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            addMessage("user", text);
+            userInput.value = '';
+            showTyping();
+
+            // Simulate AI Processing Time
+            setTimeout(() => {
+                hideTyping();
+                processAIMessage(text.toLowerCase());
+            }, 1200 + Math.random() * 800);
+        }
+
+        // --- Conversation State ---
+        let chatState = "NORMAL"; // can be NORMAL, WAITING_FOR_YES_NO, SCANNING
+
+        function processAIMessage(query) {
+            query = query.toLowerCase();
+
+            // Handle active states first
+            if (chatState === "WAITING_FOR_YES_NO") {
+                if (query.includes("yes") || query.includes("yeah") || query.includes("yep") || query.includes("did")) {
+                    chatState = "NORMAL";
+                    return addMessage("bot", "Excellent. That significantly reduces the risk metric. What else do you need assistance with?");
+                } else if (query.includes("no") || query.includes("nah") || query.includes("not yet")) {
+                    chatState = "NORMAL";
+                    return addMessage("bot", "⚠️ **CRITICAL INSTRUCTION**: You must complete that action immediately before communicating further. The longer you wait, the higher the risk of lateral movement across the network.");
+                } else {
+                    return addMessage("bot", "Please give me a clear Yes or No. Have you completed the recommended security action?");
+                }
+            }
+
+            // Keyword Groups
+            const isGreeting = /\b(hi|hello|hey|greetings|morning|evening|afternoon)\b/.test(query);
+            const isGratitude = /\b(thanks|thank you|thx|appreciate)\b/.test(query);
+            const isHelp = /\b(help|fix|secure|do|mitigate|action|step|how|what|compromised|hacked|stolen)\b/.test(query);
+            const isPassword = /\b(password|pwd|pass|credentials|login)\b/.test(query);
+            const isScan = /\b(scan|check|health|status|diagnose)\b/.test(query);
+            const isJoke = /\b(joke|funny|laugh|human|sentient)\b/.test(query);
+
+            if (isScan || query.includes("scan my pc") || query.includes("is my device safe")) {
+                chatState = "SCANNING";
+                addMessage("bot", "Initiating remote heuristic diagnostic scan on your current endpoint...");
+                
+                setTimeout(() => { showTyping(); }, 1500);
+                setTimeout(() => { hideTyping(); addMessage("bot", "Scanning memory registers [||||||||--] 80%"); showTyping(); }, 3000);
+                setTimeout(() => { hideTyping(); addMessage("bot", "Scanning background processes `C:\\Windows\\System32`..."); showTyping(); }, 4500);
+                setTimeout(() => { 
+                    hideTyping(); 
+                    if (currentThreatType === 'DATA_EXFILTRATION') {
+                        addMessage("bot", "⚠️ **WARNING**: Active background tunneling detected. I strongly recommend you click the **🛑 LOGOUT ALL DEVICES** button above immediately.");
+                    } else {
+                        addMessage("bot", "✅ **Scan Complete**: No active malware payloads detected in RAM. However, the initial threat vector still requires your attention.");
+                    }
+                    chatState = "NORMAL";
+                }, 6500);
+                return;
+            }
+
+            if (isGreeting) {
+                const greetings = [
+                    "Hello again. Status is currently yellow. How can I assist?",
+                    "Greetings. I am monitoring the SOC telemetry. Do you need incident remediation steps?",
+                    "Hi. Let's focus on securing your endpoint. What is your question?"
+                ];
+                return addMessage("bot", greetings[Math.floor(Math.random() * greetings.length)]);
+            }
+
+            if (isGratitude) {
+                const replies = [
+                    "You're welcome. Cyber hygiene is a collective effort.",
+                    "No problem. Let me know if you observe any other anomalies.",
+                    "Affirmative. Closing incident ticket.",
+                    "My pleasure. Stay vigilant."
+                ];
+                return addMessage("bot", replies[Math.floor(Math.random() * replies.length)]);
+            }
+
+            if (isPassword) {
+                chatState = "WAITING_FOR_YES_NO";
+                return addMessage("bot", "Password hygiene is critical. Have you successfully changed your password to a 16+ character passphrase yet?");
+            }
+
+            if (isJoke) {
+                return addMessage("bot", "I am a Level 5 Incident Response AI. I do not experience 'humor'. I do, however, find people who write their passwords on sticky notes highly illogical. 🤖");
+            }
+
+            if (isHelp) {
+                if (currentThreatType === 'BRUTE_FORCE') {
+                    addMessage("bot", "⚠️ Based on the signature of the **Brute Force Attack**, I need you to do two things:\n1. Open your Company Portal and change your password.\n2. Ensure multi-factor authentication (MFA) is active on your device.");
+                    setTimeout(() => { addMessage("bot", "Have you noticed any automated password reset emails in your personal inbox today?"); chatState = "WAITING_FOR_YES_NO"; }, 2000);
+                } else if (currentThreatType === 'DATA_EXFILTRATION') {
+                    addMessage("bot", "⚠️ For a **Data Exfiltration** alert, massive data streams left your account without permission. Check your recent download history immediately. If you did not trigger these, your session cookie might be hijacked.");
+                } else if (currentThreatType === 'INSIDER_THREAT') {
+                    addMessage("bot", "⚠️ You accessed classified directories. Since our Zero Trust architecture flagged this, IT requires written justification. Provide your reason exclusively to your department head.");
+                } else if (currentThreatType === 'IMPOSSIBLE_TRAVEL') {
+                    addMessage("bot", "⚠️ Your session hopped between two countries instantly! I recommend clicking the red **🛑 LOGOUT ALL DEVICES** button above forcefully terminate the ghost session.");
+                } else if (currentThreatType === 'PRIVILEGE_ESCALATION') {
+                    addMessage("bot", "⚠️ Privilege escalation attempts are a termination-level offense if not assigned by IT. If your account was hijacked to do this, immediately contact the SOC Admin hotline.");
+                } else {
+                    addMessage("bot", "I recommend changing your password, enabling Two-Factor Authentication, and clearing your active browser sessions across all devices.");
+                }
+                return;
+            }
+
+            // High Dynamic Fallback
+            const genericReplies = [
+                "I am processing your query against the MITRE ATT&CK framework... I don't see a correlation. Please rephrase that in relation to your security incident.",
+                "My neural linguistic engine is focused strictly on cybersecurity. Could you clarify what you mean?",
+                "I am detecting high cognitive load. Let's stick to the basics: Do you need help securing your account after this incident?",
+                "Interesting... Unfortunately, I can only assist with threat mitigation. Try asking me 'Should I run a scan?'",
+                "I am analyzing the network packets you are sending me. Please be concise. What do you need to fix?"
+            ];
+            addMessage("bot", genericReplies[Math.floor(Math.random() * genericReplies.length)]);
+        }
+    </script>
+</body>
+</html>
