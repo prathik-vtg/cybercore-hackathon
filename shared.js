@@ -194,8 +194,9 @@ class SecurityEventBus {
     _initFirebaseSync() {
         // Wait for Firebase to be ready via the globally injected script
         const waitInterval = setInterval(() => {
-            if (window.db) {
+            if (window.firebase && window.firebase.database) {
                 clearInterval(waitInterval);
+                window.db = window.firebase.database();
                 console.log("🔗 Connecting SecurityEventBus to Firebase Realtime Database...");
                 
                 // Continuous Sync: Security Events
