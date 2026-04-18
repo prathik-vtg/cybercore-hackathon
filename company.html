@@ -1522,6 +1522,34 @@
 
             switchPage('overview');
         }
+        // ── REMOTE LOGOUT LISTENER ─────────────────
+        // Listens to Firebase for remote session wipes (from Chatbot Panic Button)
+        securityBus.onSessionUpdate((sessions) => {
+            if (currentUser) {
+                // If sessions array is completely empty, or currentUser is not in it
+                const isStillActive = sessions.some(s => s.empId === currentUser.id);
+                if (!isStillActive) {
+                    // Force UI Logout without sending another updateSession event to Firebase
+                    currentUser = null;
+                    downloadCountToday = 0;
+                    downloadTracker = {};
+                    
+                    document.getElementById('loginPage').style.display = '';
+                    document.getElementById('dashboard').classList.remove('active');
+                    document.getElementById('loginEmail').value = '';
+                    document.getElementById('loginPassword').value = '';
+                    document.getElementById('activityFeed').innerHTML = '';
+                    switchPage('overview');
+                    
+                    // Show terrifying error
+                    const err = document.getElementById('loginError');
+                    const errText = document.getElementById('loginErrorText');
+                    err.classList.add('show');
+                    err.style.background = 'rgba(255, 23, 68, 0.2)';
+                    errText.textContent = `CRITICAL: Your session was forcefully terminated by the Security Operations Center.`;
+                }
+            }
+        });
     </script>
 </body>
 </html>
