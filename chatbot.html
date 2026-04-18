@@ -351,6 +351,32 @@
         }
 
         function forcePasswordReset() {
+            // Find employee email from URL name
+            const currentName = new URLSearchParams(window.location.search).get('name') || 'Employee';
+            let empEmail = 'prathikgowda5463@gmail.com'; // fallback
+            
+            if (typeof EMPLOYEES !== 'undefined') {
+                const emp = EMPLOYEES.find(e => e.name === currentName);
+                if (emp) empEmail = emp.email;
+            }
+
+            // We use the existing Threat Template but change the text to be a Password Reset
+            if (typeof window.emailjs !== 'undefined' && typeof EMAIL_JS_SERVICE_ID !== 'undefined') {
+                window.emailjs.send(EMAIL_JS_SERVICE_ID, EMAIL_JS_TEMPLATE_ID, {
+                    to_email: empEmail,
+                    to_name: currentName,
+                    threat_type: '🔒 PASSWORD RESET',
+                    severity: 'ACTION REQUIRED',
+                    ip_address: 'CyberCore AI Gateway',
+                    location: 'Automated System',
+                    timestamp: new Date().toLocaleString(),
+                    description: 'You have initiated a secure password reset via the AI Security Advisor. Please log in with your temporary credentials.',
+                    advisor_link: window.location.href
+                }).then(() => {
+                    console.log("Reset email sent successfully.");
+                });
+            }
+
             addMessage("bot", "✅ **SUCCESS:** Password reset initiated. A secure, one-time temporary login link has been dispatched to your corporate email address to regain access.");
             
             const btn = document.getElementById('resetBtn');
