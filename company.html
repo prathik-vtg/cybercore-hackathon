@@ -958,6 +958,30 @@
         setInterval(updateClock, 1000);
         updateClock();
 
+        // ── Password Reset Handler ─────────────────
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'reset' && urlParams.get('user')) {
+                const userEmail = urlParams.get('user');
+                const newPassword = prompt(`CyberCore Security Protocol\nEnter the new desired password for account [ ${userEmail} ]:`);
+                if (newPassword && newPassword.trim() !== '') {
+                    const customPasswords = JSON.parse(localStorage.getItem('custom-passwords') || '{}');
+                    customPasswords[userEmail] = newPassword;
+                    localStorage.setItem('custom-passwords', JSON.stringify(customPasswords));
+                    
+                    // Forcefully drop them out of the Brute Force block if they were blocked
+                    const storedBlocks = JSON.parse(localStorage.getItem('failed-attempts') || '{}');
+                    if (storedBlocks[userEmail]) {
+                        delete storedBlocks[userEmail];
+                        localStorage.setItem('failed-attempts', JSON.stringify(storedBlocks));
+                    }
+                    
+                    alert("Password securely updated! Your account block has been lifted. You may now login.");
+                    window.history.replaceState({}, document.title, "company.html"); // Clear URL
+                }
+            }
+        });
+
         // ── Location Selector ──────────────────────
         function populateLocations() {
             const select = document.getElementById('locationSelect');
@@ -1007,7 +1031,16 @@
             }
 
             // Find employee
-            const emp = EMPLOYEES.find(e => e.email.toLowerCase() === email && e.password === password);
+            const customPasswords = JSON.parse(localStorage.getItem('custom-passwords') || '{}');
+            let emp = null;
+
+            if (customPasswords[email] && customPasswords[email] === password) {
+                // They successfully logged in with their newly typed reset password!
+                emp = EMPLOYEES.find(e => e.email.toLowerCase() === email);
+            } else if (!customPasswords[email]) {
+                // Normal login path if they haven't reset their password
+                emp = EMPLOYEES.find(e => e.email.toLowerCase() === email && e.password === password);
+            }
 
             if (!emp) {
                 // Failed login

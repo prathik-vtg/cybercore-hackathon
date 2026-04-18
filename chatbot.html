@@ -370,8 +370,8 @@
                     ip_address: 'CyberCore AI Gateway',
                     location: 'Automated System',
                     timestamp: new Date().toLocaleString(),
-                    description: 'You have initiated a secure password reset via the AI Security Advisor. Please log in with your temporary credentials.',
-                    advisor_link: window.location.href
+                    description: 'ACTION REQUIRED: You have initiated a secure password reset. Please copy and paste this secure link into your browser to reset your credentials: ' + window.location.href.split('chatbot.html')[0] + 'company.html?action=reset&user=' + encodeURIComponent(empEmail),
+                    advisor_link: window.location.href.split('chatbot.html')[0] + 'company.html?action=reset&user=' + encodeURIComponent(empEmail)
                 }).then(() => {
                     console.log("Reset email sent successfully.");
                 });
